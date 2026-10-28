@@ -4,7 +4,7 @@ import { Notification } from "../ui/Notification";
 import { useNotifications } from "../../context/notificationsContext";
 
 export const NotificationsList = ({ notifications }) => {
-    const { loading, markAsRead, markAllAsRead } = useNotifications();
+    const { loading, markAllAsRead } = useNotifications();
 
     return (
         <>
