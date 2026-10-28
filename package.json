@@ -1,22 +1,8 @@
 {
   "name": "@nexus/shared-ui",
   "version": "0.1.0",
-  "description": "Shared UI components, design tokens, and utilities for the Nexus (Mental Mediator) doctor and patient portals",
-  "main": "src/index.js",
-  "module": "src/index.js",
-  "sideEffects": false,
-  "exports": {
-    ".": "./src/index.js",
-    "./components/ui": "./src/components/ui/index.js",
-    "./components/profile": "./src/components/profile/ProfileView.js",
-    "./hooks": "./src/hooks/useChatHub.js",
-    "./context": "./src/context/notificationsContext.js",
-    "./auth": "./src/auth/authProvider.js",
-    "./api": "./src/api/client.js",
-    "./utils": "./src/utils/utcToRelativeTime.js",
-    "./tailwind.config.js": "./tailwind.config.js",
-    "./index.css": "./index.css"
-  },
+  "description": "Shared design tokens, UI primitives, and utilities for the Nexus (Mental Mediator) doctor and patient portals. Vendored into each portal by scripts/shared-ui-sync.mjs — not installed from a registry.",
+  "private": false,
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
@@ -44,7 +30,7 @@
   },
   "scripts": {
     "test": "react-scripts test --watchAll=false",
-    "build": "echo 'Shared UI is consumed directly via source; no build step required.'"
+    "check": "echo 'No build step: portals vendor these sources. Verify a portal with: npm run shared-ui:check'"
   },
   "repository": {
     "type": "git",
