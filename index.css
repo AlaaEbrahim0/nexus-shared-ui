@@ -1,0 +1,194 @@
+@import url("https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Questrial&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * These variables are aliases, not a second palette. Every value is resolved
+ * from tailwind.config.js at build time so brand changes happen in one place.
+ */
+:root {
+    --nexus-brand: theme("colors.primary.500");
+    --nexus-brand-strong: theme("colors.primary.700");
+    --nexus-brand-deep: theme("colors.navy");
+    --nexus-ink: theme("colors.ink");
+    --nexus-muted: theme("colors.muted");
+    --nexus-canvas: theme("colors.canvas");
+    --nexus-surface: theme("colors.surface");
+    --nexus-border: theme("colors.line");
+    --nexus-neutral-300: theme("colors.neutral.300");
+    --nexus-success: theme("colors.success.800");
+    --nexus-warning: theme("colors.warning.500");
+    --nexus-danger: theme("colors.danger.600");
+    --nexus-info: theme("colors.info.600");
+    --nexus-radius-sm: theme("borderRadius.lg");
+    --nexus-radius-card: theme("borderRadius.2xl");
+    --nexus-shadow-card: theme("boxShadow.card");
+}
+
+html[data-theme="nexus"] {
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+html,
+:host {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: theme("fontFamily.sans");
+    color: var(--nexus-ink);
+    background: var(--nexus-canvas);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--nexus-brand);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: var(--nexus-brand);
+    color: var(--nexus-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@layer components {
+    .container {
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+    }
+
+    .input,
+    .textarea,
+    .select {
+        background-color: var(--nexus-surface);
+        color: var(--nexus-ink);
+        line-height: 1.4;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .col {
+        flex: 0 0 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        width: calc(100% / 12);
+    }
+
+    .col-1 {
+        width: calc((100% / 12) * 1);
+    }
+    .col-2 {
+        width: calc((100% / 12) * 2);
+    }
+    .col-3 {
+        width: calc((100% / 12) * 3);
+    }
+    .col-4 {
+        width: calc((100% / 12) * 4);
+    }
+    .col-5 {
+        width: calc((100% / 12) * 5);
+    }
+    .col-6 {
+        width: calc((100% / 12) * 6);
+    }
+    .col-7 {
+        width: calc((100% / 12) * 7);
+    }
+    .col-8 {
+        width: calc((100% / 12) * 8);
+    }
+    .col-9 {
+        width: calc((100% / 12) * 9);
+    }
+    .col-10 {
+        width: calc((100% / 12) * 10);
+    }
+    .col-11 {
+        width: calc((100% / 12) * 11);
+    }
+    .col-12 {
+        width: calc((100% / 12) * 12);
+    }
+}
+
+.animated-gradient {
+    background: linear-gradient(
+        -45deg,
+        var(--nexus-brand),
+        var(--nexus-brand-deep),
+        var(--nexus-brand)
+    );
+    background-size: 400% 400%;
+    animation: gradientAnimation 10s ease infinite;
+}
+
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 2px grey;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--nexus-brand);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--nexus-brand-strong);
+}
