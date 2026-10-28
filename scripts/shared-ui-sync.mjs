@@ -3,8 +3,9 @@
 // CRA transpiles JSX only under the app's own src/, so the shared sources are copied in at
 // their pinned git ref rather than imported from node_modules.
 //
-//   node scripts/shared-ui-sync.mjs          copy upstream files in
-//   node scripts/shared-ui-sync.mjs check    exit 1 if this portal has drifted
+//   node scripts/shared-ui-sync.mjs                  copy upstream files in
+//   node scripts/shared-ui-sync.mjs check            exit 1 if this portal has drifted
+//   node scripts/shared-ui-sync.mjs --ref <sha>      bump the pin, then copy files in
 //
 // A checkout of nexus-shared-ui sitting next to this portal is used when it is already at
 // the pinned ref; otherwise the pinned ref is cloned from GitHub, so CI never needs a
@@ -17,12 +18,24 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const portalRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const checkOnly = process.argv.slice(2).includes("check");
-const forceClone = process.argv.slice(2).includes("--clone");
+const argv = process.argv.slice(2);
+const checkOnly = argv.includes("check");
+const forceClone = argv.includes("--clone");
 
-const manifest = JSON.parse(
-  fs.readFileSync(path.join(portalRoot, ".shared-ui.json"), "utf8")
-);
+const manifestPath = path.join(portalRoot, ".shared-ui.json");
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+
+const refFlag = argv.indexOf("--ref");
+if (refFlag !== -1) {
+  const nextRef = argv[refFlag + 1];
+  if (!/^[0-9a-f]{7,40}$/.test(nextRef || "")) {
+    console.error("--ref expects a commit sha.");
+    process.exit(1);
+  }
+  manifest.ref = nextRef;
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(`Pinned @nexus/shared-ui to ${nextRef}`);
+}
 
 function readGitRev(dir) {
   try {
