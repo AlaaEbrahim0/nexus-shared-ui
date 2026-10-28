@@ -3,6 +3,9 @@
  *
  * These components form the foundational design system for both
  * the doctor and patient portals.
+ *
+ * Canonical source: https://github.com/AlaaEbrahim0/nexus-shared-ui
+ * Vendored into each portal by scripts/shared-ui-sync.mjs — edit here, never in a portal.
  */
 
 export {
