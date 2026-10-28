@@ -4,13 +4,23 @@
   "description": "Shared design tokens, UI primitives, and utilities for the Nexus (Mental Mediator) doctor and patient portals. Vendored into each portal by scripts/shared-ui-sync.mjs — not installed from a registry.",
   "private": false,
   "peerDependencies": {
+    "@microsoft/signalr": ">=8.0.0",
+    "axios": ">=1.7.0",
+    "formik": ">=2.4.0",
+    "framer-motion": ">=11.0.0",
+    "moment": ">=2.30.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "react-router-dom": ">=6.0.0",
+    "react-hot-toast": ">=2.4.0",
     "react-icons": ">=5.0.0",
-    "react-hot-toast": ">=2.0.0",
-    "framer-motion": ">=11.0.0",
-    "react-markdown": ">=9.0.0"
+    "react-markdown": ">=9.0.0",
+    "react-router-dom": ">=6.0.0",
+    "yup": ">=1.4.0"
+  },
+  "peerDependenciesMeta": {
+    "formik": { "optional": true },
+    "yup": { "optional": true },
+    "moment": { "optional": true }
   },
   "devDependencies": {
     "react": "^18.3.1",

@@ -78,6 +78,22 @@ Consumers import from their vendored copy, never from `@nexus/shared-ui`:
 import { Button, Card, Post, Comment } from "../components/ui";
 ```
 
+### Packages the vendored files require
+
+Nothing here is bundled — each portal must already provide the packages its vendored files
+import. `peerDependencies` in `package.json` is the union; `formik`, `yup`, and `moment` are
+optional because only a subset of portals vendors the files that use them.
+
+| Package | Used by | doctor-ui | patient-ui |
+|---------|---------|-----------|------------|
+| `react`, `react-dom`, `react-router-dom`, `axios`, `react-icons`, `react-hot-toast`, `framer-motion`, `react-markdown` | primitives, community components, API client | ✅ | ✅ |
+| `@microsoft/signalr` | `hooks/useChatHub.js`, `context/notificationsContext.js` | ✅ | ✅ |
+| `moment` | `utils/utcToRelativeTime.js` | ✅ | ✅ |
+| `formik`, `yup` | `components/profile/CertificateModal.js`, `QualificationModal.js` | ✅ | ➖ not vendored |
+
+Adding a new third-party import to a shared file means adding that dependency to **both** portals
+before re-pinning, or the portal that omits it will fail its build.
+
 ---
 
 ## How to update
