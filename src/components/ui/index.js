@@ -6,6 +6,13 @@
  *
  * Canonical source: https://github.com/AlaaEbrahim0/nexus-shared-ui
  * Vendored into each portal by scripts/shared-ui-sync.mjs — edit here, never in a portal.
+ *
+ * This entry point is deliberately limited to the dependency-light primitives.
+ * The community components (Post, Comment, Reply, …) live in ./community because
+ * they pull in react-markdown, which ships ESM only: Create React App's Jest
+ * config does not transform node_modules and cannot be overridden without
+ * ejecting, so re-exporting them here made every test that imports "../ui"
+ * fail to parse. Consumers that need them import "./community" explicitly.
  */
 
 export {
@@ -25,15 +32,3 @@ export {
     Spinner,
     Textarea,
 } from "./primitives";
-
-export { Post } from "./Post";
-export { Comment } from "./Comment";
-export { Reply } from "./Reply";
-export { CreatePostModal } from "./CreatePostModal";
-export { UpdatePostModal } from "./UpdatePostModal";
-export { CustomDeletionModal } from "./CustomDeletionModal";
-export { CustomToast } from "./CustomToast";
-export { FilterationComponent } from "./FilterationComponent";
-export { Notification } from "./Notification";
-export { NotificationsList } from "./NotificationList";
-export { PostSkeleton } from "./PostSkeleton";
