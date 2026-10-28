@@ -1,19 +1,19 @@
 {
   "name": "@nexus/shared-ui",
   "version": "0.1.0",
-  "description": "Shared UI components and design tokens for Mental Mediator portals",
+  "description": "Shared UI components, design tokens, and utilities for the Nexus (Mental Mediator) doctor and patient portals",
   "main": "src/index.js",
   "module": "src/index.js",
-  "types": "src/index.d.ts",
   "sideEffects": false,
   "exports": {
+    ".": "./src/index.js",
     "./components/ui": "./src/components/ui/index.js",
-    "./components/profile": "./src/components/profile/index.js",
-    "./hooks": "./src/hooks/index.js",
-    "./context": "./src/context/index.js",
-    "./auth": "./src/auth/index.js",
-    "./api": "./src/api/index.js",
-    "./utils": "./src/utils/index.js",
+    "./components/profile": "./src/components/profile/ProfileView.js",
+    "./hooks": "./src/hooks/useChatHub.js",
+    "./context": "./src/context/notificationsContext.js",
+    "./auth": "./src/auth/authProvider.js",
+    "./api": "./src/api/client.js",
+    "./utils": "./src/utils/utcToRelativeTime.js",
     "./tailwind.config.js": "./tailwind.config.js",
     "./index.css": "./index.css"
   },
@@ -46,7 +46,9 @@
     "test": "react-scripts test --watchAll=false",
     "build": "echo 'Shared UI is consumed directly via source; no build step required.'"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlaaEbrahim0/nexus-shared-ui.git"
+  },
+  "keywords": ["nexus", "mental-mediator", "shared-ui", "design-system", "react", "tailwind", "daisyui"]
 }
