@@ -75,8 +75,20 @@ on a developer-local filesystem path.
 Consumers import from their vendored copy, never from `@nexus/shared-ui`:
 
 ```jsx
-import { Button, Card, Post, Comment } from "../components/ui";
+import { Button, Card } from "../components/ui";          // primitives entry
+import { Post, Comment } from "../components/ui/community"; // or by direct path
 ```
+
+### Why `ui/index.js` exports only primitives
+
+`Post`, `Comment`, and `Reply` import `react-markdown`, which is **ESM only**. Create React App's
+Jest configuration never transforms `node_modules` and cannot be extended without ejecting, so a
+barrel that re-exports those components makes *every* test importing `"../ui"` fail with
+`SyntaxError: Unexpected token 'export'` — including tests that only touch `Button` or `Input`.
+
+`index.js` therefore stays dependency-light, and `community.js` is the explicit opt-in entry for
+the heavier components. Follow the same rule for anything new that pulls an ESM-only package:
+keep it out of `index.js`.
 
 ### Packages the vendored files require
 
