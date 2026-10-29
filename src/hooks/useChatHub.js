@@ -29,6 +29,7 @@ export const useChatHub = (
         onMemberUpdated,
         onMemberLeft,
         onRoomArchived,
+        onRoomUpdated,
         onSubscribed,
         onReconnected,
     } = {}
@@ -45,6 +46,7 @@ export const useChatHub = (
         onMemberUpdated,
         onMemberLeft,
         onRoomArchived,
+        onRoomUpdated,
         onSubscribed,
         onReconnected,
     };
@@ -112,6 +114,13 @@ export const useChatHub = (
 
         connection.on("RoomArchived", (room) => {
             handlersRef.current.onRoomArchived?.(room);
+        });
+
+        // Lock, unlock, privacy, schedule and cover changes. The payload is a
+        // room snapshot built for the broadcasting moderator, so consumers
+        // must merge room level fields only (see mergeRoomUpdateEvent).
+        connection.on("RoomUpdated", (room) => {
+            handlersRef.current.onRoomUpdated?.(room);
         });
 
         connection.onreconnected(async () => {

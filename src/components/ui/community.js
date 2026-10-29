@@ -21,3 +21,9 @@ export { FilterationComponent } from "./FilterationComponent";
 export { Notification } from "./Notification";
 export { NotificationsList } from "./NotificationList";
 export { PostSkeleton } from "./PostSkeleton";
+
+// Chat room directory. RoomCard and JoinRoomModal render no markdown, but the
+// room UI is grouped here so a portal keeps one entry point for it.
+export { RoomCard } from "../chat/RoomCard";
+export { JoinRoomModal } from "../chat/JoinRoomModal";
+export { filterRooms, CHAT_ROOM_TABS, CHAT_ROOM_SORTS } from "../chat/roomsFilter";
