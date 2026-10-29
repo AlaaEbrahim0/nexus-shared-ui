@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BiImageAdd } from "react-icons/bi";
 import { IoClose } from "react-icons/io5";
+import { useModerationStage } from "../../hooks/useModerationStage";
 
 const inputClass = "input input-bordered h-12 w-full bg-white text-neutral-900 placeholder:text-neutral-600 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20";
 const textareaClass = "textarea textarea-bordered w-full bg-white text-neutral-900 placeholder:text-neutral-600 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20";
@@ -13,6 +14,7 @@ export const CreatePostModal = ({ isVisible, onClose, onCreate, loading }) => {
     const [tags, setTags] = useState("");
     const [postPhoto, setPostPhoto] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const stage = useModerationStage(loading);
 
     useEffect(() => {
         if (!isVisible) {
@@ -87,11 +89,17 @@ export const CreatePostModal = ({ isVisible, onClose, onCreate, loading }) => {
                             </div>
                         )}
                     </div>
+                    {stage && (
+                        <p role="status" aria-live="polite" className="rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-900">
+                            <span className="font-semibold">{stage.label}</span>
+                            {stage.detail && <span className="mt-0.5 block text-xs text-primary-800/80">{stage.detail}</span>}
+                        </p>
+                    )}
                     <div className="flex flex-col-reverse gap-3 border-t border-neutral-200 pt-5 sm:flex-row sm:justify-end">
                         <button type="button" className="btn btn-ghost text-neutral-700" disabled={loading} onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn border-0 bg-primary-700 text-white hover:bg-primary-800" disabled={loading || !title.trim() || !content.trim()}>
                             {loading && <span className="loading loading-spinner loading-sm" aria-hidden="true" />}
-                            {loading ? "Creating…" : "Create post"}
+                            {loading ? "Checking…" : "Create post"}
                         </button>
                     </div>
                 </form>

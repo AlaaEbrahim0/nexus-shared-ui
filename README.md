@@ -19,11 +19,11 @@ Paths are mirrored exactly into each portal, so `src/components/ui/primitives.js
 | `src/index.css` | Global CSS variables, font import, base resets |
 | `src/components/ui/` | Primitives (`Button`, `Card`, `Input`, `Modal`, …), community components (`Post`, `Comment`, `Reply`, …) |
 | `src/components/profile/` | `ProfileView`, `CertificateModal`, `QualificationModal`, `profileUtils` |
-| `src/hooks/` | `useChatHub` |
+| `src/hooks/` | `useChatHub`, `useModerationStage` |
 | `src/context/` | `NotificationsProvider`, `UserProfileProvider` |
 | `src/auth/` | `AuthProvider`, session helpers (`getToken`, `saveSession`, …) |
 | `src/api/` | Axios client with JWT interceptor and error helpers |
-| `src/utils/` | `convertUtcToRelativeTime` |
+| `src/utils/` | `convertUtcToRelativeTime` (relative labels for community and notification timestamps), `moderationState` (content-safety submit states and error classification) |
 | `scripts/shared-ui-sync.mjs` | The vendoring tool consumed by both portals |
 
 ---
@@ -100,7 +100,7 @@ optional because only a subset of portals vendors the files that use them.
 |---------|---------|-----------|------------|
 | `react`, `react-dom`, `react-router-dom`, `axios`, `react-icons`, `react-hot-toast`, `framer-motion`, `react-markdown` | primitives, community components, API client | ✅ | ✅ |
 | `@microsoft/signalr` | `hooks/useChatHub.js`, `context/notificationsContext.js` | ✅ | ✅ |
-| `moment` | `utils/utcToRelativeTime.js` | ✅ | ✅ |
+| `moment` | nothing any more — `utils/utcToRelativeTime.js` was rewritten onto `Intl.RelativeTimeFormat`, so it remains an optional peer only for consumers that have not re-pinned | ➖ | ➖ |
 | `formik`, `yup` | `components/profile/CertificateModal.js`, `QualificationModal.js` | ✅ | ➖ not vendored |
 
 Adding a new third-party import to a shared file means adding that dependency to **both** portals

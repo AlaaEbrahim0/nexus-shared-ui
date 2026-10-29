@@ -3,6 +3,8 @@ import { Reply } from "./Reply";
 import { convertUtcToRelativeTime } from "../../utils/utcToRelativeTime";
 import { useCreateReply, useDeleteComment, useGetReplies, useUpdateComment } from "../../api/community.api";
 import { getApiErrorMessage } from "../../api/client";
+import { useModerationStage } from "../../hooks/useModerationStage";
+import { isModerationUnavailableError, moderationUnavailableMessage } from "../../utils/moderationState";
 import { BiHide, BiShow, BiMessageAltAdd } from "react-icons/bi";
 import { CustomDeletionModal } from "./CustomDeletionModal";
 import { FaEdit } from "react-icons/fa";
@@ -56,13 +58,21 @@ export const Comment = ({
         execute: createReplyExecute,
     } = useCreateReply();
 
+    const replyStage = useModerationStage(isCreateLoading);
+
     useEffect(() => {
         if (createReplyError) {
-            toast.error(getApiErrorMessage(createReplyError, "Could not load your reply. Please try again."), {
-                duration: 4000,
-                position: "top-center",
-                className: "text-lg text-primary",
-            });
+            const unavailable = isModerationUnavailableError(createReplyError);
+            toast.error(
+                unavailable
+                    ? moderationUnavailableMessage("reply")
+                    : getApiErrorMessage(createReplyError, "Could not add your reply. Please try again."),
+                {
+                    duration: unavailable ? 8000 : 4000,
+                    position: "top-center",
+                    className: "text-lg text-primary",
+                },
+            );
         }
     }, [createReplyError]);
 
@@ -79,11 +89,8 @@ export const Comment = ({
             setShowReplies(true);
             toast.success("Reply has been added successfully", {});
         } catch (e) {
-            // toast.error(e.errors[0].description, {
-            //     duration: 4000,
-            //     position: "top-center",
-            //     className: "text-lg text-primary",
-            // });
+            // Surfaced by the createReplyError effect above; caught here so a
+            // rejected reply does not become an unhandled promise rejection.
         }
     };
 
@@ -287,7 +294,7 @@ export const Comment = ({
                         type="button"
                         className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary-800 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={scrollToAddReply}
-                        disabled={isCreateLoading || !commentText}
+                        disabled={isCreateLoading}
                     >
                         <BiMessageAltAdd aria-hidden="true" /> Reply
                     </button>
@@ -302,9 +309,7 @@ export const Comment = ({
                                 content={reply.content}
                                 username={reply.username}
                                 authorId={reply.appUserId}
-                                repliedAt={convertUtcToRelativeTime(
-                                    reply.repliedAt
-                                )}
+                                repliedAt={reply.repliedAt}
                                 commentId={id}
                                 postId={postId}
                                 handleDeleteReply={async () => {
@@ -343,8 +348,14 @@ export const Comment = ({
                         ) : (
                             <BiMessageAltAdd aria-hidden="true" />
                         )}
-                        Reply
+                        {isCreateLoading ? "Checking…" : "Reply"}
                     </button>
+                    {replyStage && (
+                        <p role="status" aria-live="polite" className="mt-2 text-sm text-neutral-700">
+                            <span className="font-semibold">{replyStage.label}</span>
+                            {replyStage.detail && <span className="mt-0.5 block text-xs text-neutral-600">{replyStage.detail}</span>}
+                        </p>
+                    )}
                 </div>
             )}
         </motion.article>

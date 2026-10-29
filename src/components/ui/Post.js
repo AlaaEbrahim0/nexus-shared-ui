@@ -13,6 +13,8 @@ import { motion } from "framer-motion";
 import { FiShare2 } from "react-icons/fi";
 import { getApiErrorMessage } from "../../api/client";
 import { getMemberProfilePath } from "../profile/profileUtils";
+import { useModerationStage } from "../../hooks/useModerationStage";
+import { isModerationUnavailableError, moderationUnavailableMessage } from "../../utils/moderationState";
 
 const imagesDir = process.env.REACT_APP_IMAGE_BASE_URL;
 
@@ -58,6 +60,8 @@ export const Post = ({
         execute: createCommentExecute,
     } = useCreateComment();
 
+    const commentStage = useModerationStage(isCreateLoading);
+
     const handleCommentChange = (e) => {
         setCommentText(e.target.value);
     };
@@ -74,9 +78,14 @@ export const Post = ({
             setShowComments(true);
             toast.success("Comment has been  added successfully", {});
         } catch (e) {
-            console.log(e);
-            toast.error(getApiErrorMessage(e, "Could not add your comment. Please try again."), {
-                duration: 4000,
+            // A check that never finished is not a judgement on the author, so
+            // it must not be reported as the policy message the API would have
+            // returned for a real rejection.
+            const message = isModerationUnavailableError(e)
+                ? moderationUnavailableMessage("comment")
+                : getApiErrorMessage(e, "Could not add your comment. Please try again.");
+            toast.error(message, {
+                duration: isModerationUnavailableError(e) ? 8000 : 4000,
                 position: "top-center",
                 className: "text-lg text-primary",
             });
@@ -318,9 +327,7 @@ export const Post = ({
                                 id={comment.id}
                                 content={comment.content}
                                 authorName={comment.username || "Anonymous"}
-                                commentedAt={convertUtcToRelativeTime(
-                                    comment.commentedAt
-                                )}
+                                commentedAt={comment.commentedAt}
                                 authorId={comment.appUserId}
                                 postId={id}
                                 handleDeleteComment={async () =>
@@ -359,9 +366,15 @@ export const Post = ({
                         aria-label="Add comment"
                     >
                         {isCreateLoading ? <span className="loading loading-spinner loading-sm" aria-hidden="true" /> : <BiMessageAltAdd className="text-lg" aria-hidden="true" />}
-                        <span className="hidden sm:inline">Comment</span>
+                        <span className="hidden sm:inline">{isCreateLoading ? "Checking…" : "Comment"}</span>
                     </button>
                 </div>
+                {commentStage && (
+                    <p role="status" aria-live="polite" className="mt-2 text-sm text-neutral-700">
+                        <span className="font-semibold">{commentStage.label}</span>
+                        {commentStage.detail && <span className="mt-0.5 block text-xs text-neutral-600">{commentStage.detail}</span>}
+                    </p>
+                )}
                 <div className="mt-3 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
                         {commentCount > 0 ? <button
