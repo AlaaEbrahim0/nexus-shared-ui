@@ -339,6 +339,93 @@ describe("CreatePostModal", () => {
         expect(screen.getByLabelText(/post content/i)).toHaveValue("");
     });
 
+    it("requires a group before publishing to the specific audience", async () => {
+        const onCreate = jest.fn().mockResolvedValue(undefined);
+        renderModal({
+            onCreate,
+            groups: [{ id: 7, label: "Anxiety support" }],
+        });
+
+        fireEvent.change(screen.getByLabelText(/audience/i), {
+            target: { value: "SpecificGroup" },
+        });
+        typeContent("A group update");
+        chooseCategory("General Discussion");
+
+        const publish = screen.getByRole("button", { name: /^publish$/i });
+        expect(publish).toBeDisabled();
+        expect(screen.getByLabelText(/^group/i)).toHaveValue("");
+
+        fireEvent.change(screen.getByLabelText(/^group/i), {
+            target: { value: "7" },
+        });
+        expect(publish).toBeEnabled();
+
+        fireEvent.click(publish);
+        await waitFor(() =>
+            expect(onCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    visibility: "SpecificGroup",
+                    targetGroupId: 7,
+                }),
+                null
+            )
+        );
+    });
+
+    it("saves a draft to the account and reuses its id", async () => {
+        const onSaveDraft = jest.fn().mockResolvedValue({ id: 42 });
+        renderModal({ onSaveDraft, currentUserId: "user-1" });
+
+        typeContent("Server draft body");
+        fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+
+        await waitFor(() =>
+            expect(onSaveDraft).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    content: "Server draft body",
+                    targetGroupId: null,
+                }),
+                null
+            )
+        );
+        await waitFor(() =>
+            expect(
+                screen.getByText(/draft saved to your account/i)
+            ).toBeInTheDocument()
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: /save draft/i }));
+        await waitFor(() =>
+            expect(onSaveDraft).toHaveBeenLastCalledWith(
+                expect.objectContaining({ content: "Server draft body" }),
+                42
+            )
+        );
+    });
+
+    it("removes an uploaded asset through the cleanup callback", () => {
+        const onDeleteMedia = jest.fn();
+        renderModal({
+            onDeleteMedia,
+            initialDraft: {
+                id: 5,
+                title: "",
+                content: "Draft",
+                category: "General Discussion",
+                tags: "",
+                visibility: "Public",
+                targetGroupId: null,
+                isAnonymous: false,
+                media: [uploadResult],
+            },
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /remove saved image/i }));
+
+        expect(onDeleteMedia).toHaveBeenCalledWith(uploadResult.url);
+    });
+
     it("closes on Escape while idle but not while publishing", () => {
         const { onClose, unmount } = renderModal();
 
