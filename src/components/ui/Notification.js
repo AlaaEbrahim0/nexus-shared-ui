@@ -16,6 +16,7 @@ const notificationKind = (type = "", resources = {}) => {
 
 export const Notification = ({
     id,
+    title,
     message,
     notifierUserName,
     dateCreated,
@@ -52,7 +53,7 @@ export const Notification = ({
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-600">{label}</span>
                     {!isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-primary-700" aria-label="Unread" />}
                 </span>
-                <span className="mt-1 block text-sm font-medium leading-5 text-neutral-900">{message}</span>
+                <span className="mt-1 block text-sm font-medium leading-5 text-neutral-900">{title || message}</span>
                 <span className="mt-1 block text-xs text-neutral-600">{notifierUserName ? `${notifierUserName} · ` : ""}{convertUtcToRelativeTime(dateCreated)}</span>
             </span>
         </button>

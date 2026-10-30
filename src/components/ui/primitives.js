@@ -502,7 +502,7 @@ export const Modal = ({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-slate-950/55 p-4"
+            className="fixed inset-0 z-modal flex items-start justify-center overflow-y-auto bg-slate-950/55 p-4"
             onClick={(event) => {
                 if (closeOnBackdrop && event.target === event.currentTarget) {
                     onCloseRef.current?.();
@@ -517,7 +517,7 @@ export const Modal = ({
                 aria-labelledby={title ? titleId : undefined}
                 aria-describedby={description ? descriptionId : undefined}
                 tabIndex={-1}
-                className={`relative w-full ${
+                className={`relative my-auto w-full ${
                     modalSizes[size] || modalSizes.md
                 } rounded-2xl border border-neutral-200 bg-base-100 shadow-2xl outline-none ${className}`}
             >

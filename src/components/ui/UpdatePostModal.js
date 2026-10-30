@@ -19,9 +19,12 @@ export const UpdatePostModal = ({ isVisible, onClose, onUpdate, loading, initial
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (loading || !title.trim() || !content.trim()) return;
+        if (loading || !content.trim()) return;
         try {
-            await onUpdate(initialData.id, title.trim(), content.trim(), initialData.postPhoto);
+            await onUpdate(initialData.id, {
+                title: title.trim(),
+                content: content.trim(),
+            });
         } catch (error) {
             // The caller owns user-facing error feedback.
         }
@@ -33,7 +36,7 @@ export const UpdatePostModal = ({ isVisible, onClose, onUpdate, loading, initial
     if (!modalRoot) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-slate-950/50 p-3 sm:p-6">
+        <div className="fixed inset-0 z-modal flex items-start justify-center overflow-y-auto bg-slate-950/50 p-3 sm:p-6">
             <motion.section role="dialog" aria-modal="true" aria-labelledby="update-post-title" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="my-auto w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl sm:p-7">
                 <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
@@ -46,8 +49,8 @@ export const UpdatePostModal = ({ isVisible, onClose, onUpdate, loading, initial
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <label className="block">
-                        <span className="mb-1.5 block text-sm font-semibold text-neutral-700">Title</span>
-                        <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Post title" disabled={loading} required maxLength={160} className={inputClass} />
+                        <span className="mb-1.5 block text-sm font-semibold text-neutral-700">Title (Optional)</span>
+                        <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Post title" disabled={loading} maxLength={160} className={inputClass} />
                     </label>
                     <label className="block">
                         <span className="mb-1.5 block text-sm font-semibold text-neutral-700">Post content</span>
@@ -56,7 +59,7 @@ export const UpdatePostModal = ({ isVisible, onClose, onUpdate, loading, initial
                     {initialData?.postPhoto && <img src={initialData.postPhoto} alt="Current post" className="max-h-48 max-w-full rounded-xl object-contain" />}
                     <div className="flex flex-col-reverse gap-3 border-t border-neutral-200 pt-5 sm:flex-row sm:justify-end">
                         <button type="button" className="btn btn-ghost text-neutral-700" disabled={loading} onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn border-0 bg-primary-700 text-white hover:bg-primary-800" disabled={loading || !title.trim() || !content.trim()}>
+                        <button type="submit" className="btn border-0 bg-primary-700 text-white hover:bg-primary-800" disabled={loading || !content.trim()}>
                             {loading && <span className="loading loading-spinner loading-sm" aria-hidden="true" />}
                             {loading ? "Saving…" : "Save changes"}
                         </button>

@@ -104,6 +104,14 @@ export const RoomCard = ({ room, to, onJoin, joinDisabled = false, className = "
                     <h3 className="min-w-0 text-base font-bold text-neutral-900">
                         {title}
                     </h3>
+                    {room.isMember && Number(room.unreadCount) > 0 && (
+                        <span
+                            className="inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-error px-1.5 py-0.5 text-xs font-bold leading-5 text-white"
+                            aria-label={`${room.unreadCount} unread ${room.unreadCount === 1 ? "message" : "messages"}`}
+                        >
+                            {room.unreadCount > 99 ? "99+" : room.unreadCount}
+                        </span>
+                    )}
                 </div>
 
                 <p className="line-clamp-2 text-sm text-neutral-600">

@@ -27,6 +27,8 @@ export const Post = ({
     date,
     image,
     postPhoto,
+    media,
+    isOwnPost,
     commentCount: initialCommentCount,
     setData,
     currentUserId,
@@ -43,6 +45,17 @@ export const Post = ({
     const [likeLoading, setLikeLoading] = useState(false);
     const [isUpdateModalVisible, setUpdateModalVisible] = useState(false); // Add state to control the visibility of the update modal
     const authorPath = getMemberProfilePath(authorId, currentUserId);
+
+    // Anonymous posts carry no author id, so ownership comes from the API.
+    const canManagePost = Boolean(isOwnPost) || (Boolean(authorId) && authorId === currentUserId);
+
+    // Older payloads only have the single photo URL; new ones send a list.
+    const attachments = Array.isArray(media) && media.length
+        ? media
+        : postPhoto
+            ? [{ url: postPhoto, type: "image" }]
+            : [];
+    const firstImage = attachments.find((item) => item.type === "image");
 
     const {
         isLoading: isUpdatePostLoading,
@@ -102,7 +115,7 @@ export const Post = ({
         const url = `${window.location.origin}/forums/${id}`;
         try {
             if (navigator.share) {
-                await navigator.share({ title, text: content, url });
+                await navigator.share({ title: title || "Community post", text: content, url });
             } else if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(url);
                 toast.success("Post link copied to clipboard");
@@ -169,17 +182,12 @@ export const Post = ({
         }
     };
 
-    const handleUpdatePost = async (id, title, content, postPhoto) => {
-        if (!title || !content) {
+    const handleUpdatePost = async (postId, payload) => {
+        if (!payload?.content) {
             return;
         }
         try {
-            await updatePostExecute(
-                id,
-                title,
-                content,
-                postPhoto
-            );
+            await updatePostExecute(postId, payload);
 
             await setData();
 
@@ -241,7 +249,7 @@ export const Post = ({
                     </div>
                 </div>
 
-                {authorId === currentUserId && (
+                {canManagePost && (
                     <div className="dropdown dropdown-end">
                         <button type="button" tabIndex={0} aria-label="Post actions" aria-haspopup="menu" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700">
                             <HiOutlineMenu className="text-xl" aria-hidden="true" />
@@ -301,22 +309,45 @@ export const Post = ({
                 )}
             </div>
             <div className="mt-4 min-w-0 px-4 sm:px-5">
-                <Link className="inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700" to={`/forums/${id}`}>
-                <h3 className="break-words text-xl font-bold leading-7 tracking-tight text-neutral-900 transition-colors group-hover:text-primary-900 sm:text-2xl sm:leading-8">
-                    {title}
-                </h3>
-                </Link>
+                {title ? (
+                    <Link className="inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700" to={`/forums/${id}`}>
+                        <h3 className="break-words text-xl font-bold leading-7 tracking-tight text-neutral-900 transition-colors group-hover:text-primary-900 sm:text-2xl sm:leading-8">
+                            {title}
+                        </h3>
+                    </Link>
+                ) : (
+                    <Link className="text-sm font-semibold text-primary-800 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700" to={`/forums/${id}`}>
+                        View discussion
+                    </Link>
+                )}
                 <ReactMarkdown className="break-words whitespace-pre-line text-sm leading-6 text-neutral-700 sm:text-base sm:leading-7">
                     {content}
                 </ReactMarkdown>
             </div>
-            {postPhoto && (
-                <img
-                    src={postPhoto}
-                    className="mx-4 mt-4 max-h-[32rem] w-auto max-w-[calc(100%-2rem)] rounded-xl border border-neutral-200 bg-neutral-50 object-contain sm:mx-5 sm:max-w-[calc(100%-2.5rem)]"
-                    alt="Post attachment"
-                    loading="lazy"
-                />
+            {attachments.length > 0 && (
+                <div className={`mx-4 mt-4 grid gap-2 sm:mx-5 ${attachments.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                    {attachments.map((item) =>
+                        item.type === "video" ? (
+                            <video
+                                key={item.url}
+                                src={item.url}
+                                controls
+                                preload="metadata"
+                                className="max-h-[32rem] w-full rounded-xl border border-neutral-200 bg-black object-contain"
+                            >
+                                Your browser cannot play this video.
+                            </video>
+                        ) : (
+                            <img
+                                key={item.url}
+                                src={item.url}
+                                className="max-h-[32rem] w-full rounded-xl border border-neutral-200 bg-neutral-50 object-contain"
+                                alt="Post attachment"
+                                loading="lazy"
+                            />
+                        )
+                    )}
+                </div>
             )}
             {showComments && (
                 <div className="mt-4">
@@ -402,7 +433,7 @@ export const Post = ({
                 onClose={() => setUpdateModalVisible(false)}
                 onUpdate={handleUpdatePost}
                 loading={isUpdatePostLoading} // Pass the loading state
-                initialData={{ id, title, content, postPhoto }}
+                initialData={{ id, title, content, postPhoto: firstImage?.url }}
             />
         </motion.article>
     );
