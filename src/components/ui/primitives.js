@@ -502,7 +502,7 @@ export const Modal = ({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-modal flex items-start justify-center overflow-y-auto bg-slate-950/55 p-4"
+            className="fixed inset-0 z-modal flex items-center justify-center overflow-hidden bg-slate-950/55 p-3 sm:p-6"
             onClick={(event) => {
                 if (closeOnBackdrop && event.target === event.currentTarget) {
                     onCloseRef.current?.();
@@ -517,13 +517,13 @@ export const Modal = ({
                 aria-labelledby={title ? titleId : undefined}
                 aria-describedby={description ? descriptionId : undefined}
                 tabIndex={-1}
-                className={`relative my-auto w-full ${
+                className={`flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden ${
                     modalSizes[size] || modalSizes.md
                 } rounded-2xl border border-neutral-200 bg-base-100 shadow-2xl outline-none ${className}`}
             >
                 {(title || onClose) && (
-                    <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4 sm:px-6">
-                        <div>
+                    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4 sm:px-6">
+                        <div className="min-w-0">
                             {title && (
                                 <h2
                                     id={titleId}
@@ -546,16 +546,18 @@ export const Modal = ({
                                 type="button"
                                 onClick={onClose}
                                 aria-label="Close dialog"
-                                className="-mr-1 rounded-lg p-2 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                                className="-mr-1 shrink-0 rounded-lg p-2 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
                                 <FiX aria-hidden="true" className="h-5 w-5" />
                             </button>
                         )}
                     </div>
                 )}
-                <div className="px-5 py-5 sm:px-6">{children}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+                    {children}
+                </div>
                 {footer && (
-                    <div className="flex flex-wrap justify-end gap-3 border-t border-neutral-200 px-5 py-4 sm:px-6">
+                    <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-neutral-200 bg-base-100 px-5 py-4 sm:px-6">
                         {footer}
                     </div>
                 )}

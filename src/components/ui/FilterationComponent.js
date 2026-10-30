@@ -3,7 +3,7 @@ import { FiFilter } from "react-icons/fi";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
-const panelClass = "my-auto w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl sm:p-6";
+const panelClass = "my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xl sm:p-6";
 const labelClass = "mb-1.5 block text-sm font-semibold text-neutral-700";
 const fieldClass = "input input-bordered w-full bg-white text-neutral-900 placeholder:text-neutral-600 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20";
 
