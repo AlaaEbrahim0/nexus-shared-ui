@@ -9,19 +9,51 @@
  * from tailwind.config.js at build time so brand changes happen in one place.
  */
 :root {
-    --nexus-brand: theme("colors.primary.500");
-    --nexus-brand-strong: theme("colors.primary.700");
-    --nexus-brand-deep: theme("colors.navy");
-    --nexus-ink: theme("colors.ink");
-    --nexus-muted: theme("colors.muted");
-    --nexus-canvas: theme("colors.canvas");
-    --nexus-surface: theme("colors.surface");
-    --nexus-border: theme("colors.line");
-    --nexus-neutral-300: theme("colors.neutral.300");
-    --nexus-success: theme("colors.success.800");
-    --nexus-warning: theme("colors.warning.500");
-    --nexus-danger: theme("colors.danger.600");
-    --nexus-info: theme("colors.info.600");
+    /* RGB triplets consumed by Tailwind's colour bridge. */
+    --white: 255 255 255;
+    --canvas: 244 247 250;
+    --surface: 255 255 255;
+    --ink: 15 23 42;
+    --muted: 100 116 139;
+    --line: 226 232 240;
+
+    --neutral-50: 244 247 250;
+    --neutral-100: 241 245 249;
+    --neutral-200: 226 232 240;
+    --neutral-300: 203 213 225;
+    --neutral-400: 148 163 184;
+    --neutral-500: 100 116 139;
+    --neutral-600: 71 85 105;
+    --neutral-700: 51 65 85;
+    --neutral-800: 30 41 59;
+    --neutral-900: 15 23 42;
+    --neutral-950: 2 6 23;
+
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    --nexus-brand: #00747f;
+    --nexus-brand-strong: #00525b;
+    --nexus-brand-deep: #00163b;
+    --nexus-ink: rgb(var(--ink));
+    --nexus-muted: rgb(var(--muted));
+    --nexus-canvas: rgb(var(--canvas));
+    --nexus-surface: rgb(var(--surface));
+    --nexus-border: rgb(var(--line));
+    --nexus-neutral-300: rgb(var(--neutral-300));
+    --nexus-success: #15803d;
+    --nexus-warning: #f59e0b;
+    --nexus-danger: #b91c1c;
+    --nexus-info: #0369a1;
     --nexus-radius-sm: theme("borderRadius.lg");
     --nexus-radius-card: theme("borderRadius.2xl");
     --nexus-shadow-card: theme("boxShadow.card");
@@ -33,6 +65,52 @@ html[data-theme="nexus"] {
 
 html[data-theme="dark"] {
     color-scheme: dark;
+
+    --canvas: 8 15 30;
+    --surface: 17 26 46;
+    --ink: 241 245 249;
+    --muted: 148 163 184;
+    --line: 38 52 74;
+
+    /* The neutral and slate scales swap semantic direction in dark mode:
+       light surfaces become dark, dark text becomes light, so existing
+       utility classes continue to describe their intent. */
+    --neutral-50: 8 15 30;
+    --neutral-100: 15 23 42;
+    --neutral-200: 30 41 59;
+    --neutral-300: 51 65 85;
+    --neutral-400: 71 85 105;
+    --neutral-500: 148 163 184;
+    --neutral-600: 203 213 225;
+    --neutral-700: 226 232 240;
+    --neutral-800: 241 245 249;
+    --neutral-900: 248 250 252;
+    --neutral-950: 255 255 255;
+
+    --slate-50: 8 15 30;
+    --slate-100: 15 23 42;
+    --slate-200: 30 41 59;
+    --slate-300: 51 65 85;
+    --slate-400: 71 85 105;
+    --slate-500: 148 163 184;
+    --slate-600: 203 213 225;
+    --slate-700: 226 232 240;
+    --slate-800: 241 245 249;
+    --slate-900: 248 250 252;
+    --slate-950: 255 255 255;
+
+    --nexus-brand: #48dab3;
+    --nexus-brand-strong: #5eead4;
+    --nexus-ink: rgb(var(--ink));
+    --nexus-muted: rgb(var(--muted));
+    --nexus-canvas: rgb(var(--canvas));
+    --nexus-surface: rgb(var(--surface));
+    --nexus-border: rgb(var(--line));
+    --nexus-neutral-300: rgb(var(--neutral-300));
+    --nexus-success: #4ade80;
+    --nexus-warning: #fbbf24;
+    --nexus-danger: #f87171;
+    --nexus-info: #38bdf8;
 }
 
 html,
@@ -73,7 +151,7 @@ textarea:focus-visible {
 
 ::selection {
     background: var(--nexus-brand);
-    color: var(--nexus-surface);
+    color: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -191,4 +269,143 @@ textarea:focus-visible {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--nexus-brand-strong);
+}
+
+
+/*
+ * Theme bridge for the small number of accent utilities that intentionally
+ * carry a light tint. Component structure and semantic layout stay unchanged;
+ * only the surface/accent values are remapped for dark mode.
+ */
+html[data-theme="dark"] .bg-white {
+    background-color: rgb(var(--surface));
+}
+
+html[data-theme="dark"] .bg-white\/95 {
+    background-color: rgb(var(--surface) / 0.95);
+}
+
+html[data-theme="dark"] .bg-white\/90 {
+    background-color: rgb(var(--surface) / 0.9);
+}
+
+html[data-theme="dark"] .hover\:bg-white:hover {
+    background-color: rgb(var(--neutral-100));
+}
+
+html[data-theme="dark"] .border-white {
+    border-color: rgb(var(--line));
+}
+
+html[data-theme="dark"] .bg-gray-300 {
+    background-color: rgb(var(--neutral-300));
+}
+
+html[data-theme="dark"] .bg-primary-50,
+html[data-theme="dark"] .bg-primary-100,
+html[data-theme="dark"] .bg-primary\/10,
+html[data-theme="dark"] .bg-primary\/5 {
+    background-color: rgb(72 218 179 / 0.14);
+}
+
+html[data-theme="dark"] .text-primary-900,
+html[data-theme="dark"] .text-primary-800,
+html[data-theme="dark"] .text-primary-700 {
+    color: #99f6e4;
+}
+
+html[data-theme="dark"] .border-primary-200,
+html[data-theme="dark"] .border-primary\/20,
+html[data-theme="dark"] .border-primary\/15 {
+    border-color: rgb(72 218 179 / 0.35);
+}
+
+html[data-theme="dark"] .bg-success-50,
+html[data-theme="dark"] .bg-success-100,
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] .bg-emerald-100 {
+    background-color: rgb(52 211 153 / 0.13);
+}
+
+html[data-theme="dark"] .text-success-900,
+html[data-theme="dark"] .text-success-800,
+html[data-theme="dark"] .text-emerald-800,
+html[data-theme="dark"] .text-emerald-900 {
+    color: #6ee7b7;
+}
+
+html[data-theme="dark"] .border-success-200,
+html[data-theme="dark"] .border-emerald-200 {
+    border-color: rgb(52 211 153 / 0.35);
+}
+
+html[data-theme="dark"] .bg-warning-50,
+html[data-theme="dark"] .bg-warning-100,
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] .bg-amber-100 {
+    background-color: rgb(251 191 36 / 0.13);
+}
+
+html[data-theme="dark"] .text-warning-900,
+html[data-theme="dark"] .text-warning-800,
+html[data-theme="dark"] .text-amber-800,
+html[data-theme="dark"] .text-amber-900 {
+    color: #fcd34d;
+}
+
+html[data-theme="dark"] .border-warning-200,
+html[data-theme="dark"] .border-amber-200,
+html[data-theme="dark"] .border-amber-300 {
+    border-color: rgb(251 191 36 / 0.35);
+}
+
+html[data-theme="dark"] .bg-danger-50,
+html[data-theme="dark"] .bg-danger-100,
+html[data-theme="dark"] .bg-rose-50,
+html[data-theme="dark"] .bg-rose-100 {
+    background-color: rgb(251 113 133 / 0.13);
+}
+
+html[data-theme="dark"] .text-danger-900,
+html[data-theme="dark"] .text-danger-800,
+html[data-theme="dark"] .text-rose-900,
+html[data-theme="dark"] .text-rose-800,
+html[data-theme="dark"] .text-rose-700,
+html[data-theme="dark"] .text-red-700,
+html[data-theme="dark"] .text-red-800 {
+    color: #fda4af;
+}
+
+html[data-theme="dark"] .border-danger-200,
+html[data-theme="dark"] .border-rose-200,
+html[data-theme="dark"] .border-rose-300 {
+    border-color: rgb(251 113 133 / 0.35);
+}
+
+html[data-theme="dark"] .bg-info-50,
+html[data-theme="dark"] .bg-info-100,
+html[data-theme="dark"] .bg-sky-50,
+html[data-theme="dark"] .bg-sky-100 {
+    background-color: rgb(56 189 248 / 0.13);
+}
+
+html[data-theme="dark"] .text-info-900,
+html[data-theme="dark"] .text-info-800,
+html[data-theme="dark"] .text-sky-800,
+html[data-theme="dark"] .text-sky-900 {
+    color: #7dd3fc;
+}
+
+html[data-theme="dark"] .border-info-200,
+html[data-theme="dark"] .border-sky-200,
+html[data-theme="dark"] .border-sky-300 {
+    border-color: rgb(56 189 248 / 0.35);
+}
+
+html[data-theme="dark"] .bg-violet-50 {
+    background-color: rgb(167 139 250 / 0.13);
+}
+
+html[data-theme="dark"] .text-violet-800 {
+    color: #c4b5fd;
 }

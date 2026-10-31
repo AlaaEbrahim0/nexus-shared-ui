@@ -82,11 +82,27 @@ const palette = {
 // which shadow a nested `colors.neutral` scale. Re-emit the same flat keys
 // from our palette so `bg-neutral-*`, `text-neutral-*`, and friends resolve to
 // the Nexus neutrals instead of the framework defaults.
+const themedScale = (name, shades) =>
+    Object.fromEntries(
+        shades.map((shade) => [
+            shade,
+            `rgb(var(--${name}-${shade}) / <alpha-value>)`,
+        ])
+    );
+
 const neutralShades = Object.fromEntries(
-    Object.entries(palette.neutral).map(([shade, value]) => [
+    Object.keys(palette.neutral).map((shade) => [
         `neutral-${shade}`,
-        value,
+        `rgb(var(--neutral-${shade}) / <alpha-value>)`,
     ])
+);
+
+const slateShades = [
+    "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950",
+];
+const slateScale = themedScale("slate", slateShades);
+const slateFlatShades = Object.fromEntries(
+    Object.entries(slateScale).map(([shade, value]) => [`slate-${shade}`, value])
 );
 
 const lightTheme = {
@@ -182,8 +198,10 @@ module.exports = {
                     DEFAULT: palette.brand[500],
                     ...palette.brand,
                 },
-                neutral: palette.neutral,
+                neutral: themedScale("neutral", Object.keys(palette.neutral)),
                 ...neutralShades,
+                slate: slateScale,
+                ...slateFlatShades,
                 success: palette.success,
                 warning: palette.warning,
                 danger: palette.danger,
@@ -193,11 +211,11 @@ module.exports = {
                     ...palette.danger,
                 },
                 info: palette.info,
-                ink: palette.neutral[900],
-                muted: palette.neutral[500],
-                line: palette.neutral[200],
-                canvas: palette.neutral[50],
-                surface: "#FFFFFF",
+                ink: "rgb(var(--ink) / <alpha-value>)",
+                muted: "rgb(var(--muted) / <alpha-value>)",
+                line: "rgb(var(--line) / <alpha-value>)",
+                canvas: "rgb(var(--canvas) / <alpha-value>)",
+                surface: "rgb(var(--surface) / <alpha-value>)",
                 navy: "#00163b",
             },
             animation: {
