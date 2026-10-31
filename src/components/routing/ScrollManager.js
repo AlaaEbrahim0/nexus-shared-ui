@@ -88,6 +88,16 @@ export const ScrollManager = () => {
             if (navigationType === "POP") {
                 const saved = positions.get(location.key) ??
                     positionsByLocation.get(`${location.pathname}${location.search}`);
+                if (typeof window !== "undefined") {
+                    window.__nexusScrollDebug = {
+                        type: navigationType,
+                        key: location.key,
+                        path: `${location.pathname}${location.search}`,
+                        saved,
+                        positions: Array.from(positions.entries()),
+                        byPath: Array.from(positionsByLocation.entries()),
+                    };
+                }
                 if (typeof saved === "number") {
                     // Content may still be loading when Back/Forward returns;
                     // retry briefly until the saved position is reachable.
