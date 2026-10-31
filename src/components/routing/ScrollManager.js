@@ -26,17 +26,24 @@ export const ScrollManager = () => {
         const previousRestoration = window.history.scrollRestoration;
         window.history.scrollRestoration = "manual";
 
+        return () => {
+            window.history.scrollRestoration = previousRestoration;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+
         const savePosition = () => {
-            const entry = { key: location.key, path: `${location.pathname}${location.search}` };
-            positions.set(entry.key, window.scrollY);
-            positionsByLocation.set(entry.path, window.scrollY);
+            const path = `${location.pathname}${location.search}`;
+            positions.set(location.key, window.scrollY);
+            positionsByLocation.set(path, window.scrollY);
         };
         savePosition();
         window.addEventListener("scroll", savePosition, { passive: true });
 
         return () => {
             window.removeEventListener("scroll", savePosition);
-            window.history.scrollRestoration = previousRestoration;
         };
     }, [location.key, location.pathname, location.search]);
 
