@@ -89,7 +89,15 @@ export const ScrollManager = () => {
                 const saved = positions.get(location.key) ??
                     positionsByLocation.get(`${location.pathname}${location.search}`);
                 if (typeof saved === "number") {
-                    window.scrollTo(0, saved);
+                    // Content may still be loading when Back/Forward returns;
+                    // retry briefly until the saved position is reachable.
+                    const restore = (attempt = 0) => {
+                        window.scrollTo(0, saved);
+                        if (attempt < 6 && Math.abs(window.scrollY - saved) > 2) {
+                            window.setTimeout(() => restore(attempt + 1), 80);
+                        }
+                    };
+                    restore();
                     return;
                 }
             }
