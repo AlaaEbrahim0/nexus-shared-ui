@@ -74,10 +74,10 @@ export const MediaGallery = ({ media, className = "" }) => {
     const goTo = (nextIndex) => {
         const safeIndex = Math.max(0, Math.min(items.length - 1, nextIndex));
         const track = trackRef.current;
-        if (track) {
+        setIndex(safeIndex);
+        if (typeof track?.scrollTo === "function") {
             track.scrollTo({ left: safeIndex * track.clientWidth, behavior: "smooth" });
         }
-        setIndex(safeIndex);
     };
 
     const handleScroll = () => {
