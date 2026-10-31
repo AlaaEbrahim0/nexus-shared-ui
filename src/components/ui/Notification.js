@@ -57,7 +57,11 @@ export const Notification = ({
     const { label, Icon } = notificationKind(type, notificationResources);
     const doctorPortal = isDoctorRole(roles);
 
-    const handleOpen = async () => {
+    const handleOpen = async (event) => {
+        // DaisyUI keeps a dropdown open while its content holds focus; blur
+        // the item so navigating also closes the notification panel.
+        event?.currentTarget?.blur?.();
+
         // Marking the notification read does not touch the room's message read
         // position; that remains the chat read endpoint's responsibility.
         if (!isRead) await markAsRead(id);

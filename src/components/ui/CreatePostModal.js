@@ -623,8 +623,8 @@ export const CreatePostModal = ({
                 className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl outline-none"
             >
                 <header className="shrink-0 border-b border-neutral-200 px-5 py-4 sm:px-6">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 basis-52">
                             <h2
                                 id="create-post-title"
                                 className="text-xl font-bold text-neutral-900"
@@ -636,7 +636,7 @@ export const CreatePostModal = ({
                                 community.
                             </p>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="ml-auto flex shrink-0 items-center gap-2">
                             <label className="block">
                                 <span className="sr-only">Audience</span>
                                 <select

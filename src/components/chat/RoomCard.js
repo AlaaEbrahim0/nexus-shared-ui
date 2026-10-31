@@ -66,7 +66,7 @@ export const RoomCard = ({ room, to, onJoin, joinDisabled = false, className = "
                 ) : (
                     <div
                         aria-hidden="true"
-                        className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-50 via-neutral-50 to-neutral-100"
+                        className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/15 via-base-100 to-base-200"
                     >
                         <FiMessageCircle className="h-8 w-8 text-primary-300" />
                     </div>

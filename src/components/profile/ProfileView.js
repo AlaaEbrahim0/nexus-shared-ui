@@ -190,7 +190,7 @@ const CertificateCard = ({ certificate, isOwner, onEdit, onDelete }) => {
                     loading="lazy"
                 />
             ) : (
-                <div className="flex h-24 items-center justify-center bg-gradient-to-br from-primary-50 via-white to-neutral-100">
+                <div className="flex h-24 items-center justify-center bg-gradient-to-br from-primary/15 via-base-100 to-base-200">
                     <FiAward
                         aria-hidden="true"
                         className="h-9 w-9 text-primary-700"
