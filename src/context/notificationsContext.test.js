@@ -99,11 +99,18 @@ jest.mock("react-hot-toast", () => ({
 const api = require("../api/notifications.api");
 
 const Consumer = () => {
-    const { count, loading } = useNotifications();
+    const { count, loading, notifications } = useNotifications();
     return (
         <div>
             <span data-testid="count">{count}</span>
             <span data-testid="loading">{String(loading)}</span>
+            <ul>
+                {notifications.map((notification) => (
+                    <li key={notification.id} data-testid={`notification-${notification.id}`}>
+                        {notification.relatedCount || 1}:{String(notification.isRead)}
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 };
@@ -154,6 +161,56 @@ describe("NotificationsProvider", () => {
 
         await waitFor(() =>
             expect(global.__connection.stop).toHaveBeenCalled()
+        );
+    });
+
+    it("replaces an aggregated room notification and reconciles the server count", async () => {
+        const toast = require("react-hot-toast").default;
+        renderProvider();
+
+        await waitFor(() =>
+            expect(screen.getByTestId("notification-1")).toHaveTextContent("1:false")
+        );
+        toast.success.mockClear();
+
+        act(() => {
+            global.__connection.handlers.ReceiveNotification({
+                id: 1,
+                isRead: false,
+                relatedCount: 3,
+                title: "New messages in Support room",
+                resources: { roomId: 1 },
+                type: "RoomMessage",
+            });
+        });
+
+        await waitFor(() =>
+            expect(screen.getByTestId("notification-1")).toHaveTextContent("3:false")
+        );
+        expect(screen.getAllByRole("listitem")).toHaveLength(2);
+        await waitFor(() => expect(api.getUnreadCount).toHaveBeenCalled());
+        // The row already existed, so this is an update, not a new toast.
+        expect(toast.success).not.toHaveBeenCalled();
+    });
+
+    it("applies a read-state notification-updated event", async () => {
+        renderProvider();
+        await waitFor(() =>
+            expect(screen.getByTestId("notification-1")).toHaveTextContent("1:false")
+        );
+
+        act(() => {
+            global.__connection.handlers.NotificationUpdated({
+                id: 1,
+                isRead: true,
+                relatedCount: 1,
+                resources: { roomId: 1 },
+                type: "RoomMessage",
+            });
+        });
+
+        await waitFor(() =>
+            expect(screen.getByTestId("notification-1")).toHaveTextContent("1:true")
         );
     });
 
