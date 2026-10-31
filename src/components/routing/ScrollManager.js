@@ -38,7 +38,7 @@ export const ScrollManager = () => {
             window.removeEventListener("scroll", savePosition);
             window.history.scrollRestoration = previousRestoration;
         };
-    }, [location.key]);
+    }, [location.key, location.pathname, location.search]);
 
     useLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
