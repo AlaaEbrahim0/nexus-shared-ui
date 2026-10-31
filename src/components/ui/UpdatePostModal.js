@@ -89,6 +89,9 @@ export const UpdatePostModal = ({
         setMedia(toMediaItems(initialData));
         setError("");
         if (mediaInputRef.current) mediaInputRef.current.value = "";
+        // Reset only when the dialog opens or switches post; parent renders
+        // must not overwrite unsaved edits.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isVisible, initialData?.id]);
 
     useEffect(() => () => {
