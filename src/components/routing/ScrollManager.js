@@ -99,6 +99,30 @@ export const ScrollManager = () => {
                     target.scrollIntoView({ block: "start" });
                     return;
                 }
+
+                // Deep links (for example a comment anchor) may be rendered
+                // after their data loads. Retry briefly before falling back.
+                let attempts = 0;
+                const waitForAnchor = () => {
+                    const anchor = document.getElementById(
+                        decodeURIComponent(location.hash.slice(1))
+                    );
+                    if (anchor) {
+                        anchor.scrollIntoView({ block: "start" });
+                        return;
+                    }
+                    attempts += 1;
+                    if (attempts < 10) {
+                        window.setTimeout(waitForAnchor, 80);
+                        return;
+                    }
+                    if (!isInitial && navigationType === "POP" && pathnameChanged) {
+                        return;
+                    }
+                    window.scrollTo(0, 0);
+                };
+                waitForAnchor();
+                return;
             }
 
             // Let the browser restore Back/Forward entries natively. Only a
