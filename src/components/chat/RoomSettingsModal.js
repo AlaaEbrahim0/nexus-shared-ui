@@ -32,7 +32,10 @@ const validatePassphrase = (value) => {
     ) {
         return `A room password must be ${PASSPHRASE_MIN_LENGTH} to ${PASSPHRASE_MAX_LENGTH} characters.`;
     }
-    if (/[\u0000-\u001f\u007f]/.test(trimmed)) {
+    if ([...trimmed].some((character) => {
+        const code = character.charCodeAt(0);
+        return code < 32 || code === 127;
+    })) {
         return "The room password cannot contain control characters.";
     }
     return null;
@@ -83,7 +86,7 @@ export const RoomSettingsModal = ({
         setStatus("");
         setBusy("");
         if (coverInputRef.current) coverInputRef.current.value = "";
-    }, [isOpen, room?.id]);
+    }, [isOpen, room]);
 
     const run = async (label, action, successMessage) => {
         setBusy(label);
