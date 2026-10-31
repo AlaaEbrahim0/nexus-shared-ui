@@ -19,6 +19,7 @@ export const ScrollManager = () => {
     const navigationType = useNavigationType();
     const previous = useRef({ key: null, pathname: null, hash: null });
     const frameRef = useRef(null);
+    const navigationRef = useRef(false);
 
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
@@ -34,24 +35,24 @@ export const ScrollManager = () => {
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
 
+        navigationRef.current = false;
         const savePosition = () => {
+            if (navigationRef.current) return;
             const path = `${location.pathname}${location.search}`;
             positions.set(location.key, window.scrollY);
             positionsByLocation.set(path, window.scrollY);
-            if (typeof window !== "undefined") {
-                window.__nexusScrollDebug = { phase: "save", path, key: location.key, y: window.scrollY, byPath: Array.from(positionsByLocation.entries()) };
-            }
+        };
+        const saveBeforeClick = () => {
+            savePosition();
+            navigationRef.current = true;
         };
         savePosition();
         window.addEventListener("scroll", savePosition, { passive: true });
-        // Capture before React Router handles a navigation click. This makes
-        // Back restoration reliable even when the browser suppresses the final
-        // scroll event as the old page is replaced.
-        document.addEventListener("click", savePosition, true);
+        document.addEventListener("click", saveBeforeClick, true);
 
         return () => {
             window.removeEventListener("scroll", savePosition);
-            document.removeEventListener("click", savePosition, true);
+            document.removeEventListener("click", saveBeforeClick, true);
         };
     }, [location.key, location.pathname, location.search]);
 
@@ -59,16 +60,6 @@ export const ScrollManager = () => {
         if (typeof window === "undefined") return undefined;
 
         const previousLocation = previous.current;
-        // Capture the outgoing entry before the destination paints. Some
-        // headless and embedded browsers do not emit a final scroll event on
-        // programmatic navigation, so the listener alone is not enough.
-        if (previousLocation.key && previousLocation.pathname) {
-            positions.set(previousLocation.key, window.scrollY);
-            positionsByLocation.set(
-                previousLocation.path || previousLocation.pathname,
-                window.scrollY
-            );
-        }
         const pathnameChanged = previousLocation.pathname !== location.pathname;
         const hashChanged = previousLocation.hash !== location.hash;
         previous.current = {
@@ -107,9 +98,6 @@ export const ScrollManager = () => {
             if (navigationType === "POP") {
                 const saved = positions.get(location.key) ??
                     positionsByLocation.get(`${location.pathname}${location.search}`);
-                if (typeof window !== "undefined") {
-                    window.__nexusScrollDebug = { phase: "pop", type: navigationType, key: location.key, path: `${location.pathname}${location.search}`, saved, byPath: Array.from(positionsByLocation.entries()), y: window.scrollY };
-                }
                 if (typeof saved === "number") {
                     // Content may still be loading when Back/Forward returns;
                     // retry briefly until the saved position is reachable.
