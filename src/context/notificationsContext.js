@@ -283,7 +283,7 @@ export const NotificationsProvider = ({ children }) => {
                 stopWhenSettled();
             }
         };
-    }, [token, fetchNotifications]);
+    }, [token, fetchNotifications, fetchUnreadCount]);
 
     return (
         <NotificationsContext.Provider
