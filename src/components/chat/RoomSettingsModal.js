@@ -86,7 +86,10 @@ export const RoomSettingsModal = ({
         setStatus("");
         setBusy("");
         if (coverInputRef.current) coverInputRef.current.value = "";
-    }, [isOpen, room]);
+        // Reset only when the dialog opens or switches room; a successful save
+        // updates the room prop and must not erase the status or draft inputs.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, room?.id]);
 
     const run = async (label, action, successMessage) => {
         setBusy(label);
