@@ -58,7 +58,7 @@ export const RoomSettingsModal = ({
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [visibility, setVisibility] = useState("Public");
-    const [passphrase, setPassphrase] = useState("");
+    const [passphrase, setNewPassphrase] = useState("");
     const [confirmPassphrase, setConfirmPassphrase] = useState("");
     const [scheduledStart, setScheduledStart] = useState("");
     const [cover, setCover] = useState(null);
@@ -74,7 +74,7 @@ export const RoomSettingsModal = ({
         setName(room.name || "");
         setDescription(room.description || "");
         setVisibility(room.isPrivate ? "Private" : "Public");
-        setPassphrase("");
+        setNewPassphrase("");
         setConfirmPassphrase("");
         setScheduledStart(toLocalInputValue(room.scheduledStartAtUtc));
         setCover(null);
@@ -151,7 +151,7 @@ export const RoomSettingsModal = ({
             "Room password updated. Only people with the new password can join."
         );
         if (updated) {
-            setPassphrase("");
+            setNewPassphrase("");
             setConfirmPassphrase("");
             setConfirmRemovePassphrase(false);
         }
@@ -165,7 +165,7 @@ export const RoomSettingsModal = ({
         );
         if (updated) {
             setConfirmRemovePassphrase(false);
-            setPassphrase("");
+            setNewPassphrase("");
             setConfirmPassphrase("");
         }
     };
@@ -305,7 +305,7 @@ export const RoomSettingsModal = ({
                                 type="password"
                                 autoComplete="new-password"
                                 value={passphrase}
-                                onChange={(event) => setPassphrase(event.target.value)}
+                                onChange={(event) => setNewPassphrase(event.target.value)}
                                 placeholder={`${PASSPHRASE_MIN_LENGTH}–${PASSPHRASE_MAX_LENGTH} characters`}
                                 disabled={busy === "passphrase"}
                                 className={fieldClass}
