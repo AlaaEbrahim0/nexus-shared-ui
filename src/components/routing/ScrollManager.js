@@ -100,7 +100,7 @@ export const ScrollManager = () => {
                 window.cancelAnimationFrame(frameRef.current);
             }
         };
-    }, [location.key, location.pathname, location.hash, navigationType]);
+    }, [location.key, location.pathname, location.hash, location.search, navigationType]);
 
     return null;
 };
