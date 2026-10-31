@@ -13,6 +13,41 @@ import { Outlet, useLocation, useNavigationType } from "react-router-dom";
  */
 const positions = new Map();
 const positionsByLocation = new Map();
+const STORAGE_KEY = "nexus.scroll.positions";
+
+const hydratePositions = () => {
+    if (typeof window === "undefined") return;
+    try {
+        const raw = window.sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        (saved.positions || []).forEach(([key, value]) => {
+            if (!positions.has(key)) positions.set(key, value);
+        });
+        (saved.byPath || []).forEach(([key, value]) => {
+            if (!positionsByLocation.has(key)) positionsByLocation.set(key, value);
+        });
+    } catch {
+        // sessionStorage can be unavailable; in-memory restoration still works.
+    }
+};
+
+const persistPositions = () => {
+    if (typeof window === "undefined") return;
+    try {
+        window.sessionStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+                positions: Array.from(positions.entries()).slice(-50),
+                byPath: Array.from(positionsByLocation.entries()).slice(-50),
+            })
+        );
+    } catch {
+        // Ignore quota/private-mode failures.
+    }
+};
+
+hydratePositions();
 
 export const ScrollManager = () => {
     const location = useLocation();
@@ -41,6 +76,7 @@ export const ScrollManager = () => {
             const path = `${location.pathname}${location.search}`;
             positions.set(location.key, window.scrollY);
             positionsByLocation.set(path, window.scrollY);
+            persistPositions();
         };
         const saveBeforeClick = () => {
             savePosition();
@@ -59,6 +95,7 @@ export const ScrollManager = () => {
     useLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
 
+        hydratePositions();
         const previousLocation = previous.current;
         const pathnameChanged = previousLocation.pathname !== location.pathname;
         const hashChanged = previousLocation.hash !== location.hash;
