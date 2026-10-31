@@ -89,10 +89,16 @@ export const ScrollManager = () => {
         };
         savePosition();
         window.addEventListener("scroll", savePosition, { passive: true });
+        // mousedown/pointerdown happen before focus can scroll the page, so
+        // this is the last reliable point to capture the outgoing position.
+        document.addEventListener("pointerdown", savePosition, true);
+        document.addEventListener("mousedown", savePosition, true);
         document.addEventListener("click", saveBeforeClick, true);
 
         return () => {
             window.removeEventListener("scroll", savePosition);
+            document.removeEventListener("pointerdown", savePosition, true);
+            document.removeEventListener("mousedown", savePosition, true);
             document.removeEventListener("click", saveBeforeClick, true);
         };
     }, [location.key, location.pathname, location.search]);
