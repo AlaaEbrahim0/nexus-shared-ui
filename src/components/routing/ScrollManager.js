@@ -51,11 +51,22 @@ export const ScrollManager = () => {
         if (typeof window === "undefined") return undefined;
 
         const previousLocation = previous.current;
+        // Capture the outgoing entry before the destination paints. Some
+        // headless and embedded browsers do not emit a final scroll event on
+        // programmatic navigation, so the listener alone is not enough.
+        if (previousLocation.key && previousLocation.pathname) {
+            positions.set(previousLocation.key, window.scrollY);
+            positionsByLocation.set(
+                previousLocation.path || previousLocation.pathname,
+                window.scrollY
+            );
+        }
         const pathnameChanged = previousLocation.pathname !== location.pathname;
         const hashChanged = previousLocation.hash !== location.hash;
         previous.current = {
             key: location.key,
             pathname: location.pathname,
+            path: `${location.pathname}${location.search}`,
             hash: location.hash,
         };
 
@@ -88,16 +99,6 @@ export const ScrollManager = () => {
             if (navigationType === "POP") {
                 const saved = positions.get(location.key) ??
                     positionsByLocation.get(`${location.pathname}${location.search}`);
-                if (typeof window !== "undefined") {
-                    window.__nexusScrollDebug = {
-                        type: navigationType,
-                        key: location.key,
-                        path: `${location.pathname}${location.search}`,
-                        saved,
-                        positions: Array.from(positions.entries()),
-                        byPath: Array.from(positionsByLocation.entries()),
-                    };
-                }
                 if (typeof saved === "number") {
                     // Content may still be loading when Back/Forward returns;
                     // retry briefly until the saved position is reachable.
