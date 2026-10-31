@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
 
 /**
@@ -11,11 +11,56 @@ import { Outlet, useLocation, useNavigationType } from "react-router-dom";
  *
  * The routed layouts scroll the document, so this intentionally targets window.
  */
+const scrollStoreKey = (path) => `nexus.scroll.path.${path}`;
+
 export const ScrollManager = () => {
     const location = useLocation();
     const navigationType = useNavigationType();
     const previous = useRef({ key: null, pathname: null, hash: null });
     const frameRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+
+        const saveLinkScroll = (event) => {
+            if (!event.target?.closest?.("a[href]")) return;
+            const path = `${window.location.pathname}${window.location.search}`;
+            try {
+                window.sessionStorage.setItem(scrollStoreKey(path), String(window.scrollY));
+            } catch {
+                // Private mode/quota: native restoration remains in charge.
+            }
+        };
+
+        const restore = (attempt = 0) => {
+            let saved = null;
+            try {
+                saved = window.sessionStorage.getItem(
+                    scrollStoreKey(`${window.location.pathname}${window.location.search}`)
+                );
+            } catch {
+                saved = null;
+            }
+            if (saved === null) return;
+
+            const target = Number(saved);
+            window.scrollTo(0, target);
+            if (attempt < 8 && Math.abs(window.scrollY - target) > 2) {
+                window.setTimeout(() => restore(attempt + 1), 80);
+            }
+        };
+
+        const handlePopState = () => restore();
+        document.addEventListener("pointerdown", saveLinkScroll, true);
+        document.addEventListener("mousedown", saveLinkScroll, true);
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            document.removeEventListener("pointerdown", saveLinkScroll, true);
+            document.removeEventListener("mousedown", saveLinkScroll, true);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, []);
 
     useLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
