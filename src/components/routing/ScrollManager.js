@@ -1,0 +1,107 @@
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { Outlet, useLocation, useNavigationType } from "react-router-dom";
+
+/**
+ * One scroll policy for every route in a portal.
+ *
+ * - New navigations start at the top (or at an explicit #anchor).
+ * - Back/Forward restore the position saved for that history entry.
+ * - Search-only changes and local component state do not move the viewport.
+ *
+ * The layout scrolls the document, so this intentionally targets window rather
+ * than a portal-specific container.
+ */
+const positions = new Map();
+
+export const ScrollManager = () => {
+    const location = useLocation();
+    const navigationType = useNavigationType();
+    const previous = useRef({ key: null, pathname: null, hash: null });
+    const frameRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+
+        const previousRestoration = window.history.scrollRestoration;
+        window.history.scrollRestoration = "manual";
+
+        const savePosition = () => positions.set(location.key, window.scrollY);
+        savePosition();
+        window.addEventListener("scroll", savePosition, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", savePosition);
+            window.history.scrollRestoration = previousRestoration;
+        };
+    }, [location.key]);
+
+    useLayoutEffect(() => {
+        if (typeof window === "undefined") return undefined;
+
+        const previousLocation = previous.current;
+        const pathnameChanged = previousLocation.pathname !== location.pathname;
+        const hashChanged = previousLocation.hash !== location.hash;
+        previous.current = {
+            key: location.key,
+            pathname: location.pathname,
+            hash: location.hash,
+        };
+
+        if (!pathnameChanged && !hashChanged) {
+            return undefined;
+        }
+
+        // A hash-only change should move to the anchor; removing a hash is not
+        // a reason to jump to the top unless the path also changed.
+        if (!pathnameChanged && !location.hash) {
+            return undefined;
+        }
+
+        const applyScroll = () => {
+            if (location.hash) {
+                let target = null;
+                try {
+                    target = document.getElementById(
+                        decodeURIComponent(location.hash.slice(1))
+                    );
+                } catch {
+                    target = null;
+                }
+                if (target) {
+                    target.scrollIntoView({ block: "start" });
+                    return;
+                }
+            }
+
+            if (navigationType === "POP") {
+                const saved = positions.get(location.key);
+                if (typeof saved === "number") {
+                    window.scrollTo(0, saved);
+                    return;
+                }
+            }
+
+            window.scrollTo(0, 0);
+        };
+
+        // Let the destination commit before measuring anchors/scroll height.
+        frameRef.current = window.requestAnimationFrame(() => {
+            frameRef.current = window.requestAnimationFrame(applyScroll);
+        });
+
+        return () => {
+            if (frameRef.current) {
+                window.cancelAnimationFrame(frameRef.current);
+            }
+        };
+    }, [location.key, location.pathname, location.hash, navigationType]);
+
+    return null;
+};
+
+export const RootScrollLayout = () => (
+    <>
+        <ScrollManager />
+        <Outlet />
+    </>
+);
