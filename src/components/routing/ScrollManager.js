@@ -41,9 +41,14 @@ export const ScrollManager = () => {
         };
         savePosition();
         window.addEventListener("scroll", savePosition, { passive: true });
+        // Capture before React Router handles a navigation click. This makes
+        // Back restoration reliable even when the browser suppresses the final
+        // scroll event as the old page is replaced.
+        document.addEventListener("click", savePosition, true);
 
         return () => {
             window.removeEventListener("scroll", savePosition);
+            document.removeEventListener("click", savePosition, true);
         };
     }, [location.key, location.pathname, location.search]);
 
