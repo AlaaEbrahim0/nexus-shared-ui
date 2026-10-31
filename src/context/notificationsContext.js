@@ -3,6 +3,7 @@ import React, {
     useCallback,
     useContext,
     useEffect,
+    useRef,
     useState,
 } from "react";
 import * as signalR from "@microsoft/signalr";
@@ -27,6 +28,10 @@ export const NotificationsProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { token } = useAuth();
+    // Tracks which notification ids have already been shown in this session.
+    // Aggregated room notifications reuse their row id, so an update must
+    // replace the row silently instead of appearing as a new toast per message.
+    const knownIdsRef = useRef(new Set());
 
     const fetchUnreadCount = useCallback(async () => {
         if (!token) {
@@ -61,6 +66,9 @@ export const NotificationsProvider = ({ children }) => {
                 setError(null);
                 const data = await getUserNotifications(pageNumber, pageSize);
                 const list = Array.isArray(data) ? data : [];
+                knownIdsRef.current = new Set(
+                    list.map((entry) => entry.id).filter((id) => id != null)
+                );
                 setNotifications(list);
 
                 const serverCount = await fetchUnreadCount();
@@ -82,6 +90,7 @@ export const NotificationsProvider = ({ children }) => {
 
     useEffect(() => {
         if (!token) {
+            knownIdsRef.current = new Set();
             setNotifications([]);
             setCount(0);
             setError(null);
@@ -148,22 +157,49 @@ export const NotificationsProvider = ({ children }) => {
         const addNotification = (notification) => {
             if (cancelled || notification == null) return;
 
+            const isNew =
+                notification.id != null &&
+                !knownIdsRef.current.has(notification.id);
+            if (notification.id != null) {
+                knownIdsRef.current.add(notification.id);
+            }
+
             setNotifications((previous) => {
                 if (
                     notification.id != null &&
                     previous.some((entry) => entry.id === notification.id)
                 ) {
-                    return previous;
+                    // Aggregated room notifications (and any future server-side
+                    // edits) replace the existing row in place.
+                    return previous.map((entry) =>
+                        entry.id === notification.id ? notification : entry
+                    );
                 }
                 return [notification, ...previous];
             });
-            setCount((previous) => previous + 1);
-            toast.success("Notification received");
+
+            // Ask the server rather than guessing: an aggregated update can
+            // flip a previously read row back to unread.
+            fetchUnreadCount();
+            if (isNew) toast.success("Notification received");
+        };
+
+        const updateNotification = (notification) => {
+            if (cancelled || notification?.id == null) return;
+
+            knownIdsRef.current.add(notification.id);
+            setNotifications((previous) =>
+                previous.map((entry) =>
+                    entry.id === notification.id ? notification : entry
+                )
+            );
+            fetchUnreadCount();
         };
 
         const handleMessage = () => undefined;
 
         connection.on("ReceiveNotification", addNotification);
+        connection.on("NotificationUpdated", updateNotification);
         connection.on("ReceiveMessage", handleMessage);
 
         connection.onreconnecting(() => undefined);
@@ -228,6 +264,7 @@ export const NotificationsProvider = ({ children }) => {
             cancelled = true;
             if (retryTimer) window.clearTimeout(retryTimer);
             connection.off("ReceiveNotification", addNotification);
+            connection.off("NotificationUpdated", updateNotification);
             connection.off("ReceiveMessage", handleMessage);
 
             const stopWhenSettled = () => {
