@@ -12,6 +12,7 @@ import { Outlet, useLocation, useNavigationType } from "react-router-dom";
  * than a portal-specific container.
  */
 const positions = new Map();
+const positionsByLocation = new Map();
 
 export const ScrollManager = () => {
     const location = useLocation();
@@ -25,7 +26,11 @@ export const ScrollManager = () => {
         const previousRestoration = window.history.scrollRestoration;
         window.history.scrollRestoration = "manual";
 
-        const savePosition = () => positions.set(location.key, window.scrollY);
+        const savePosition = () => {
+            const entry = { key: location.key, path: `${location.pathname}${location.search}` };
+            positions.set(entry.key, window.scrollY);
+            positionsByLocation.set(entry.path, window.scrollY);
+        };
         savePosition();
         window.addEventListener("scroll", savePosition, { passive: true });
 
@@ -74,7 +79,8 @@ export const ScrollManager = () => {
             }
 
             if (navigationType === "POP") {
-                const saved = positions.get(location.key);
+                const saved = positions.get(location.key) ??
+                    positionsByLocation.get(`${location.pathname}${location.search}`);
                 if (typeof saved === "number") {
                     window.scrollTo(0, saved);
                     return;
