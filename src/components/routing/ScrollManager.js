@@ -1,127 +1,33 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
 
 /**
  * One scroll policy for every route in a portal.
  *
- * - New navigations start at the top (or at an explicit #anchor).
- * - Back/Forward restore the position saved for that history entry.
- * - Search-only changes and local component state do not move the viewport.
+ * - New pushes/replacements start at the top, or at an explicit #anchor.
+ * - Browser Back/Forward keeps native scroll restoration; we only intervene
+ *   when the destination has a hash anchor.
+ * - Search-only changes and local state updates do not move the viewport.
  *
- * The layout scrolls the document, so this intentionally targets window rather
- * than a portal-specific container.
+ * The routed layouts scroll the document, so this intentionally targets window.
  */
-const positions = new Map();
-const positionsByLocation = new Map();
-const STORAGE_KEY = "nexus.scroll.positions";
-
-const hydratePositions = () => {
-    if (typeof window === "undefined") return;
-    try {
-        const raw = window.sessionStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        (saved.positions || []).forEach(([key, value]) => {
-            if (!positions.has(key)) positions.set(key, value);
-        });
-        (saved.byPath || []).forEach(([key, value]) => {
-            if (!positionsByLocation.has(key)) positionsByLocation.set(key, value);
-        });
-    } catch {
-        // sessionStorage can be unavailable; in-memory restoration still works.
-    }
-};
-
-const persistPositions = () => {
-    if (typeof window === "undefined") return;
-    try {
-        window.sessionStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-                positions: Array.from(positions.entries()).slice(-50),
-                byPath: Array.from(positionsByLocation.entries()).slice(-50),
-            })
-        );
-    } catch {
-        // Ignore quota/private-mode failures.
-    }
-};
-
-hydratePositions();
-
 export const ScrollManager = () => {
     const location = useLocation();
     const navigationType = useNavigationType();
     const previous = useRef({ key: null, pathname: null, hash: null });
     const frameRef = useRef(null);
-    const navigationRef = useRef(false);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return undefined;
-
-        const previousRestoration = window.history.scrollRestoration;
-        window.history.scrollRestoration = "manual";
-
-        return () => {
-            window.history.scrollRestoration = previousRestoration;
-        };
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return undefined;
-
-        navigationRef.current = false;
-        const savePosition = () => {
-            if (navigationRef.current) return;
-            const path = `${location.pathname}${location.search}`;
-            positions.set(location.key, window.scrollY);
-            positionsByLocation.set(path, window.scrollY);
-            try {
-                window.sessionStorage.setItem(`nexus.scroll.path.${path}`, String(window.scrollY));
-            } catch {
-                // In-memory maps remain the fallback.
-            }
-            persistPositions();
-        };
-        const saveOnPointerDown = (event) => {
-            savePosition();
-            if (event.target?.closest?.("a[href]")) {
-                navigationRef.current = true;
-            }
-        };
-        const saveBeforeClick = () => {
-            if (!navigationRef.current) {
-                savePosition();
-            }
-            navigationRef.current = true;
-        };
-        savePosition();
-        window.addEventListener("scroll", savePosition, { passive: true });
-        // mousedown/pointerdown happen before focus can scroll the page, so
-        // this is the last reliable point to capture the outgoing position.
-        document.addEventListener("pointerdown", saveOnPointerDown, true);
-        document.addEventListener("mousedown", saveOnPointerDown, true);
-        document.addEventListener("click", saveBeforeClick, true);
-
-        return () => {
-            window.removeEventListener("scroll", savePosition);
-            document.removeEventListener("pointerdown", saveOnPointerDown, true);
-            document.removeEventListener("mousedown", saveOnPointerDown, true);
-            document.removeEventListener("click", saveBeforeClick, true);
-        };
-    }, [location.key, location.pathname, location.search]);
 
     useLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
 
-        hydratePositions();
         const previousLocation = previous.current;
+        const isInitial = previousLocation.key === null;
         const pathnameChanged = previousLocation.pathname !== location.pathname;
         const hashChanged = previousLocation.hash !== location.hash;
+
         previous.current = {
             key: location.key,
             pathname: location.pathname,
-            path: `${location.pathname}${location.search}`,
             hash: location.hash,
         };
 
@@ -129,8 +35,7 @@ export const ScrollManager = () => {
             return undefined;
         }
 
-        // A hash-only change should move to the anchor; removing a hash is not
-        // a reason to jump to the top unless the path also changed.
+        // Removing a hash is not a navigation; do not jump to the top.
         if (!pathnameChanged && !location.hash) {
             return undefined;
         }
@@ -151,27 +56,16 @@ export const ScrollManager = () => {
                 }
             }
 
-            if (navigationType === "POP") {
-                const saved = positions.get(location.key) ??
-                    positionsByLocation.get(`${location.pathname}${location.search}`);
-                if (typeof saved === "number") {
-                    // Content may still be loading when Back/Forward returns;
-                    // retry briefly until the saved position is reachable.
-                    const restore = (attempt = 0) => {
-                        window.scrollTo(0, saved);
-                        if (attempt < 6 && Math.abs(window.scrollY - saved) > 2) {
-                            window.setTimeout(() => restore(attempt + 1), 80);
-                        }
-                    };
-                    restore();
-                    return;
-                }
+            // Let the browser restore Back/Forward entries natively. Only a
+            // new entry (or the first load/refresh) starts at the top.
+            if (!isInitial && navigationType === "POP" && pathnameChanged) {
+                return;
             }
 
             window.scrollTo(0, 0);
         };
 
-        // Let the destination commit before measuring anchors/scroll height.
+        // Let the destination commit before measuring an anchor.
         frameRef.current = window.requestAnimationFrame(() => {
             frameRef.current = window.requestAnimationFrame(applyScroll);
         });
@@ -182,34 +76,6 @@ export const ScrollManager = () => {
             }
         };
     }, [location.key, location.pathname, location.hash, location.search, navigationType]);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return undefined;
-
-        const restoreForPath = (attempt = 0) => {
-            let saved = null;
-            try {
-                saved = window.sessionStorage.getItem(
-                    `nexus.scroll.path.${window.location.pathname}${window.location.search}`
-                );
-            } catch {
-                saved = null;
-            }
-            if (saved === null) return;
-            const target = Number(saved);
-            window.scrollTo(0, target);
-            if (attempt < 8 && Math.abs(window.scrollY - target) > 2) {
-                window.setTimeout(() => restoreForPath(attempt + 1), 80);
-            }
-        };
-
-        const handlePopState = () => {
-            restoreForPath();
-        };
-
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, []);
 
     return null;
 };
