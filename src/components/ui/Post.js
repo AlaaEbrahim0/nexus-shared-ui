@@ -4,7 +4,7 @@ import { HiOutlineMenu } from "react-icons/hi";
 import { BiHide, BiShow, BiMessageAltAdd } from "react-icons/bi";
 import { convertUtcToRelativeTime } from "../../utils/utcToRelativeTime";
 import { Comment } from "./Comment";
-import { setPostLike, useCreateComment, useGetComments, useUpdatePost } from "../../api/community.api";
+import { deletePostMedia, setPostLike, uploadPostMedia, useCreateComment, useGetComments, useUpdatePost } from "../../api/community.api";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import UpdatePostModal from "./UpdatePostModal"; // Import the UpdatePostModal component
@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { FiShare2 } from "react-icons/fi";
 import { getApiErrorMessage } from "../../api/client";
 import { getMemberProfilePath } from "../profile/profileUtils";
+import { MediaGallery } from "../media/MediaGallery";
 import { useModerationStage } from "../../hooks/useModerationStage";
 import { isModerationUnavailableError, moderationUnavailableMessage } from "../../utils/moderationState";
 
@@ -28,6 +29,9 @@ export const Post = ({
     image,
     postPhoto,
     media,
+    postData,
+    groups = [],
+    canPostDoctorsOnly = false,
     isOwnPost,
     commentCount: initialCommentCount,
     setData,
@@ -198,6 +202,7 @@ export const Post = ({
                 position: "top-center",
                 className: "text-lg text-primary",
             });
+            throw e;
         }
     };
 
@@ -325,29 +330,7 @@ export const Post = ({
                 </ReactMarkdown>
             </div>
             {attachments.length > 0 && (
-                <div className={`mx-4 mt-4 grid gap-2 sm:mx-5 ${attachments.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-                    {attachments.map((item) =>
-                        item.type === "video" ? (
-                            <video
-                                key={item.url}
-                                src={item.url}
-                                controls
-                                preload="metadata"
-                                className="max-h-[32rem] w-full rounded-xl border border-neutral-200 bg-black object-contain"
-                            >
-                                Your browser cannot play this video.
-                            </video>
-                        ) : (
-                            <img
-                                key={item.url}
-                                src={item.url}
-                                className="max-h-[32rem] w-full rounded-xl border border-neutral-200 bg-neutral-50 object-contain"
-                                alt="Post attachment"
-                                loading="lazy"
-                            />
-                        )
-                    )}
-                </div>
+                <MediaGallery media={attachments} className="mx-4 mt-4 sm:mx-5" />
             )}
             {showComments && (
                 <div className="mt-4">
@@ -428,12 +411,27 @@ export const Post = ({
                 </div>
             </div>
 
-            <UpdatePostModal // Integrate the UpdatePostModal component
+            <UpdatePostModal
                 isVisible={isUpdateModalVisible}
                 onClose={() => setUpdateModalVisible(false)}
                 onUpdate={handleUpdatePost}
-                loading={isUpdatePostLoading} // Pass the loading state
-                initialData={{ id, title, content, postPhoto: firstImage?.url }}
+                loading={isUpdatePostLoading}
+                groups={groups}
+                canPostDoctorsOnly={canPostDoctorsOnly}
+                onUploadMedia={uploadPostMedia}
+                onDeleteMedia={deletePostMedia}
+                initialData={{
+                    id,
+                    title,
+                    content,
+                    category: postData?.category,
+                    tags: postData?.tags,
+                    media: attachments,
+                    visibility: postData?.visibility,
+                    targetGroupId: postData?.targetGroupId,
+                    isAnonymous: postData?.isAnonymous,
+                    postPhoto: firstImage?.url,
+                }}
             />
         </motion.article>
     );

@@ -13,7 +13,6 @@
 export { Post } from "./Post";
 export { Comment } from "./Comment";
 export { Reply } from "./Reply";
-export { CreatePostModal } from "./CreatePostModal";
 export { UpdatePostModal } from "./UpdatePostModal";
 export { CustomDeletionModal } from "./CustomDeletionModal";
 export { CustomToast } from "./CustomToast";
