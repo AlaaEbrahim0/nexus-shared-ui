@@ -76,6 +76,11 @@ export const ScrollManager = () => {
             const path = `${location.pathname}${location.search}`;
             positions.set(location.key, window.scrollY);
             positionsByLocation.set(path, window.scrollY);
+            try {
+                window.sessionStorage.setItem(`nexus.scroll.path.${path}`, String(window.scrollY));
+            } catch {
+                // In-memory maps remain the fallback.
+            }
             persistPositions();
         };
         const saveBeforeClick = () => {
@@ -163,6 +168,34 @@ export const ScrollManager = () => {
             }
         };
     }, [location.key, location.pathname, location.hash, location.search, navigationType]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+
+        const restoreForPath = (attempt = 0) => {
+            let saved = null;
+            try {
+                saved = window.sessionStorage.getItem(
+                    `nexus.scroll.path.${window.location.pathname}${window.location.search}`
+                );
+            } catch {
+                saved = null;
+            }
+            if (saved === null) return;
+            const target = Number(saved);
+            window.scrollTo(0, target);
+            if (attempt < 8 && Math.abs(window.scrollY - target) > 2) {
+                window.setTimeout(() => restoreForPath(attempt + 1), 80);
+            }
+        };
+
+        const handlePopState = () => {
+            restoreForPath();
+        };
+
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, []);
 
     return null;
 };
