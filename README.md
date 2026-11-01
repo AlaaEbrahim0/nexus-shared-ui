@@ -68,7 +68,7 @@ on a developer-local filesystem path.
 
 - Portal pages, navigation, and information architecture.
 - `context/profileContext.js` — doctor and patient profile shapes differ; each portal owns its copy.
-- Doctor-only profile components (`ProfileView`, `CertificateModal`, `QualificationModal`) — vendored by `doctor-ui` only.
+- Doctor-only profile components (`CertificateModal`, `QualificationModal`) — vendored by `doctor-ui` only. (`ProfileView` and `profileUtils` are shared: both portals vendor them.)
 - Any domain rules, authorisation, or pricing. The .NET API remains the single source of truth for those.
 - No secrets or credentials: `REACT_APP_API_URL` is supplied by each portal's own environment.
 
