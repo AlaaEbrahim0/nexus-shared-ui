@@ -22,7 +22,12 @@ export const RoomCard = ({ room, to, onJoin, joinDisabled = false, className = "
     const coverUrl = safeHttpUrl(room.coverImageUrl);
     const isArchived = Boolean(room.isArchived);
     const isLocked = Boolean(room.isLocked);
-    const cannotJoin = joinDisabled || isArchived || isLocked;
+    // The server decides joinability (archived, paused, or a scheduled start
+    // that has not arrived). An older payload without the field still gets the
+    // explicit archived/locked checks so the button is never wrongly enabled.
+    const serverBlocked = room.canJoin === false;
+    const cannotJoin = joinDisabled || isArchived || isLocked || serverBlocked;
+    const notStartedYet = serverBlocked && !isArchived && !isLocked;
     const lastActivity = room.lastMessageAtUtc
         ? convertUtcToRelativeTime(room.lastMessageAtUtc)
         : "";
@@ -30,12 +35,20 @@ export const RoomCard = ({ room, to, onJoin, joinDisabled = false, className = "
         ? convertUtcToRelativeTime(room.scheduledStartAtUtc)
         : "";
 
-    const joinLabel = isArchived ? "Archived" : isLocked ? "Paused" : "Join";
+    const joinLabel = isArchived
+        ? "Archived"
+        : isLocked
+            ? "Paused"
+            : notStartedYet
+                ? "Not open yet"
+                : "Join";
     const joinTitle = isArchived
         ? "This room has been archived."
         : isLocked
             ? "This room is paused and is not accepting new members."
-            : undefined;
+            : notStartedYet
+                ? "This room opens at its scheduled time."
+                : undefined;
 
     const title = to ? (
         <Link
