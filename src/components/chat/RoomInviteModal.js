@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FiCheck, FiSearch, FiUserPlus, FiX } from "react-icons/fi";
-import { Avatar, Button, EmptyState, Modal } from "../ui/primitives";
+import { Button, EmptyState, Modal } from "../ui/primitives";
 
 const DEBOUNCE_MS = 350;
 
@@ -165,7 +165,13 @@ export const RoomInviteModal = ({
                                         aria-pressed={isSelected}
                                         className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 ${isSelected ? "bg-primary/10" : "hover:bg-neutral-100"}`}
                                     >
-                                        <Avatar src={person.photoUrl} name={person.displayName} size="h-9 w-9" textSize="text-sm" />
+                                        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 text-sm font-bold text-neutral-700" aria-hidden="true">
+                                            {person.photoUrl ? (
+                                                <img src={person.photoUrl} alt="" className="h-full w-full object-cover" />
+                                            ) : (
+                                                (person.displayName || "?").slice(0, 1).toUpperCase()
+                                            )}
+                                        </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-sm font-semibold text-neutral-900">{person.displayName || "Unnamed"}</span>
                                             <span className="block text-xs text-neutral-600">{person.isDoctor ? "Doctor" : "Member"}</span>
