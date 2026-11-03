@@ -52,8 +52,8 @@ or format config lives here.
    GitHub, so pushing does **not** build anything: production is deployed from the CLI with
    `npx vercel --prod` from the portal directory.
 6. **Both portals must end up on the same SHA.** A half-applied pin means the patient and doctor
-   views diverge on exactly the shared surface meant to prevent that. Pin `f082cb5` today:
-   `patient-ui` 45 files, `doctor-ui` 51, both `In sync`.
+   views diverge on exactly the shared surface meant to prevent that. Pin `c7c4ebf` today:
+   `patient-ui` 48 files, `doctor-ui` 54, both `In sync`.
 
 ## Changing the vendored set
 

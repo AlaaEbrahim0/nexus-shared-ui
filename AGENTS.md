@@ -69,8 +69,8 @@ Behaviour worth knowing (read `scripts/shared-ui-sync.mjs` before assuming other
 - A file that is not listed in a portal's `files` array is portal-local by definition: the sync
   neither writes nor audits it.
 
-**Current state (verified at commit `f082cb5`):** both portals are pinned to
-`f082cb5d2f2d45de0b38f43fbea2cc9de9f7d1fd` — `patient-ui` vendors 45 files, `doctor-ui` 51, and
+**Current state (verified at commit `c7c4ebf`):** both portals are pinned to
+`c7c4ebf5d58af2d3631e2870b8c96bbaeb7a5bf1` — `patient-ui` vendors 48 files, `doctor-ui` 54, and
 both report `In sync` from `npm run shared-ui:check`.
 
 ## The rule
@@ -177,7 +177,7 @@ delete the leftover copy in each portal by hand — the sync will not do it.
 
 ```bash
 npm install   # dependencies for tests only; nothing here is bundled
-npm test      # react-scripts test --watchAll=false — 11 suites / 97 tests green at f082cb5
+npm test      # react-scripts test --watchAll=false — 14 suites / 128 tests green at c7c4ebf
 npm run check # prints a reminder: there is no build step here
 ```
 
