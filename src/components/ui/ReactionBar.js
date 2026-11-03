@@ -16,6 +16,10 @@ import {
  *
  * The picker is click/tap driven (not hover-only) and closes on Escape or an
  * outside click so it stays usable with a keyboard and on touch screens.
+ *
+ * `align` decides which way the picker opens. The strip is the full five-emoji
+ * vocabulary wide, so a bar that sits against the right edge of a narrow
+ * comment or reply card has to open leftward or it leaves the screen.
  */
 export const ReactionBar = ({
     reactions = [],
@@ -23,6 +27,7 @@ export const ReactionBar = ({
     onReact,
     onRemove,
     disabled = false,
+    align = "start",
     className = "",
 }) => {
     const [isOpen, setOpen] = useState(false);
@@ -79,6 +84,33 @@ export const ReactionBar = ({
             ref={rootRef}
             className={`relative inline-flex flex-wrap items-center gap-1 ${className}`}
         >
+            <button
+                type="button"
+                onClick={() => setOpen((open) => !open)}
+                disabled={disabled}
+                aria-label={
+                    mineMeta
+                        ? `Change reaction (currently ${mineMeta.label})`
+                        : "Add a reaction"
+                }
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
+                title="React"
+                className={`grid h-8 min-w-8 place-items-center rounded-full border px-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isOpen
+                        ? "border-primary-700 bg-primary/10"
+                        : "border-neutral-200 bg-base-100 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                }`}
+            >
+                {mineMeta ? (
+                    <span aria-hidden="true" className="text-base">
+                        {mineMeta.emoji}
+                    </span>
+                ) : (
+                    <FiSmile aria-hidden="true" className="text-base" />
+                )}
+            </button>
+
             {summaries.map(({ reaction, count }) => {
                 const meta = getReactionMeta(reaction);
                 if (!meta) return null;
@@ -114,66 +146,39 @@ export const ReactionBar = ({
                 );
             })}
 
-            <div className="relative">
-                <button
-                    type="button"
-                    onClick={() => setOpen((open) => !open)}
-                    disabled={disabled}
-                    aria-label={
-                        mineMeta
-                            ? `Change reaction (currently ${mineMeta.label})`
-                            : "Add a reaction"
-                    }
-                    aria-haspopup="menu"
-                    aria-expanded={isOpen}
-                    title="React"
-                    className={`grid h-8 min-w-8 place-items-center rounded-full border px-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700 disabled:cursor-not-allowed disabled:opacity-60 ${
-                        isOpen
-                            ? "border-primary-700 bg-primary/10"
-                            : "border-neutral-200 bg-base-100 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+            {isOpen && (
+                <div
+                    role="menu"
+                    aria-label="Choose a reaction"
+                    className={`absolute bottom-full z-30 mb-1 flex items-center gap-0.5 rounded-full border border-neutral-200 bg-base-100 p-1 shadow-lg ${
+                        align === "end" ? "right-0" : "left-0"
                     }`}
                 >
-                    {mineMeta ? (
-                        <span aria-hidden="true" className="text-base">
-                            {mineMeta.emoji}
-                        </span>
-                    ) : (
-                        <FiSmile aria-hidden="true" className="text-base" />
-                    )}
-                </button>
+                    {REACTION_KINDS.map(({ value, emoji, label }) => {
+                        const isMine = value === mine;
 
-                {isOpen && (
-                    <div
-                        role="menu"
-                        aria-label="Choose a reaction"
-                        className="absolute bottom-full left-0 z-30 mb-1 flex items-center gap-0.5 rounded-full border border-neutral-200 bg-base-100 p-1 shadow-lg"
-                    >
-                        {REACTION_KINDS.map(({ value, emoji, label }) => {
-                            const isMine = value === mine;
-
-                            return (
-                                <button
-                                    key={value}
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => choose(value)}
-                                    aria-label={
-                                        isMine
-                                            ? `Remove ${label} reaction`
-                                            : `React with ${label}`
-                                    }
-                                    title={label}
-                                    className={`grid h-9 w-9 place-items-center rounded-full text-lg transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700 ${
-                                        isMine ? "bg-primary/10" : ""
-                                    }`}
-                                >
-                                    <span aria-hidden="true">{emoji}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                        return (
+                            <button
+                                key={value}
+                                type="button"
+                                role="menuitem"
+                                onClick={() => choose(value)}
+                                aria-label={
+                                    isMine
+                                        ? `Remove ${label} reaction`
+                                        : `React with ${label}`
+                                }
+                                title={label}
+                                className={`grid h-9 w-9 place-items-center rounded-full text-lg transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-700 ${
+                                    isMine ? "bg-primary/10" : ""
+                                }`}
+                            >
+                                <span aria-hidden="true">{emoji}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

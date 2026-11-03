@@ -273,6 +273,7 @@ export const Reply = ({
                         onReact={handleReact}
                         onRemove={handleRemoveReaction}
                         disabled={reactionLoading}
+                        align="end"
                     />
                 </div>
         </motion.article>

@@ -102,4 +102,25 @@ describe("ReactionBar", () => {
 
         expect(screen.getByRole("button", { name: "Add a reaction" })).toBeInTheDocument();
     });
+
+    it("puts the picker trigger before the count chips", () => {
+        renderBar();
+
+        expect(screen.getAllByRole("button")[0]).toHaveAccessibleName(/change reaction/i);
+    });
+
+    it("opens the picker inward when the strip sits against the card edge", () => {
+        renderBar({ align: "end" });
+
+        openPicker();
+        expect(screen.getByRole("menu")).toHaveClass("right-0");
+        expect(screen.getByRole("menu")).not.toHaveClass("left-0");
+    });
+
+    it("opens the picker outward by default", () => {
+        renderBar();
+
+        openPicker();
+        expect(screen.getByRole("menu")).toHaveClass("left-0");
+    });
 });

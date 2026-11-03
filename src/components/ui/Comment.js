@@ -394,6 +394,7 @@ export const Comment = ({
                         onReact={handleReact}
                         onRemove={handleRemoveReaction}
                         disabled={reactionLoading}
+                        align="end"
                         className="ml-auto"
                     />
                 </div>
