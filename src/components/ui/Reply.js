@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CustomDeletionModal } from "./CustomDeletionModal";
-import { useDeleteReply, useUpdateReply } from "../../api/community.api";
+import {
+    removeReplyReaction,
+    setReplyReaction,
+    useDeleteReply,
+    useUpdateReply,
+} from "../../api/community.api";
 import { getApiErrorMessage } from "../../api/client";
 import { FaEdit } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
@@ -11,8 +16,13 @@ import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
 import { Link } from "react-router-dom";
 import { getMemberProfilePath } from "../profile/profileUtils";
 import { convertUtcToRelativeTime } from "../../utils/utcToRelativeTime";
+import { ReactionBar } from "./ReactionBar";
+import { MediaGallery } from "../media/MediaGallery";
+import { deriveReactionState } from "../../utils/reactions";
 
 const imagesDir = process.env.REACT_APP_IMAGE_BASE_URL;
+
+const EMPTY_REACTIONS = [];
 
 export const Reply = ({
     id = -1,
@@ -24,12 +34,73 @@ export const Reply = ({
     postId = -1,
     handleDeleteReply,
     image,
+    mediaUrl,
+    mediaType,
+    reactions: initialReactions = EMPTY_REACTIONS,
+    myReaction: initialMyReaction = null,
     currentUserId,
 }) => {
-    const [replyText, setReplyText] = useState(content);
+    const [replyText, setReplyText] = useState(content || "");
     const [isEditing, setIsEditing] = useState(false);
-    const [tempReplyText, setTempReplyText] = useState(content);
+    const [tempReplyText, setTempReplyText] = useState(content || "");
+    const [reactions, setReactions] = useState(
+        () => deriveReactionState({ reactions: initialReactions, myReaction: initialMyReaction }).reactions
+    );
+    const [myReaction, setMyReaction] = useState(
+        () => deriveReactionState({ reactions: initialReactions, myReaction: initialMyReaction }).myReaction
+    );
+    const [reactionLoading, setReactionLoading] = useState(false);
     const authorPath = getMemberProfilePath(authorId, currentUserId);
+
+    useEffect(() => {
+        const next = deriveReactionState({
+            reactions: initialReactions,
+            myReaction: initialMyReaction,
+        });
+
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
+    }, [initialReactions, initialMyReaction]);
+
+    const applyReactionResult = (result) => {
+        const next = deriveReactionState({
+            reactions: result?.reactions,
+            myReaction: result?.myReaction,
+        });
+
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
+    };
+
+    const handleReact = async (reaction) => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            applyReactionResult(
+                await setReplyReaction(postId, commentId, id, reaction)
+            );
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
+        } finally {
+            setReactionLoading(false);
+        }
+    };
+
+    const handleRemoveReaction = async () => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            applyReactionResult(
+                await removeReplyReaction(postId, commentId, id)
+            );
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
+        } finally {
+            setReactionLoading(false);
+        }
+    };
 
     const handleReplyChange = (e) => {
         setTempReplyText(e.target.value);
@@ -186,6 +257,23 @@ export const Reply = ({
                             {replyText}
                         </ReactMarkdown>
                     )}
+                </div>
+
+                {mediaUrl && (
+                    <MediaGallery
+                        media={[{ url: mediaUrl, type: mediaType === "video" ? "video" : "image" }]}
+                        className="mt-3"
+                    />
+                )}
+
+                <div className="mt-2 flex justify-end border-t border-neutral-200/70 pt-2">
+                    <ReactionBar
+                        reactions={reactions}
+                        myReaction={myReaction}
+                        onReact={handleReact}
+                        onRemove={handleRemoveReaction}
+                        disabled={reactionLoading}
+                    />
                 </div>
         </motion.article>
     );

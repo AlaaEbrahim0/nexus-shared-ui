@@ -4,7 +4,10 @@ import { HiOutlineMenu } from "react-icons/hi";
 import { BiHide, BiShow, BiMessageAltAdd } from "react-icons/bi";
 import { convertUtcToRelativeTime } from "../../utils/utcToRelativeTime";
 import { Comment } from "./Comment";
-import { deletePostMedia, setPostLike, uploadPostMedia, useCreateComment, useGetComments, useUpdatePost } from "../../api/community.api";
+import { deletePostMedia, removePostReaction, setPostReaction, uploadPostMedia, useCreateComment, useGetComments, useUpdatePost } from "../../api/community.api";
+import { AttachmentPicker } from "./AttachmentPicker";
+import { ReactionBar } from "./ReactionBar";
+import { deriveReactionState } from "../../utils/reactions";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import UpdatePostModal from "./UpdatePostModal"; // Import the UpdatePostModal component
@@ -18,6 +21,10 @@ import { useModerationStage } from "../../hooks/useModerationStage";
 import { isModerationUnavailableError, moderationUnavailableMessage } from "../../utils/moderationState";
 
 const imagesDir = process.env.REACT_APP_IMAGE_BASE_URL;
+
+// A stable empty array: an inline default would create a new identity on every
+// render and retrigger the reaction sync effect below.
+const EMPTY_REACTIONS = [];
 
 export const Post = ({
     id,
@@ -40,13 +47,30 @@ export const Post = ({
     postDeletionLoading,
     likesCount: initialLikesCount = 0,
     isLikedByCurrentUser: initialLiked = false,
+    reactions: initialReactions = EMPTY_REACTIONS,
+    myReaction: initialMyReaction = null,
 }) => {
     const [commentText, setCommentText] = useState("");
+    const [commentMedia, setCommentMedia] = useState(null);
     const [showComments, setShowComments] = useState(false);
     const [commentCount, setCommentCount] = useState(initialCommentCount);
-    const [likesCount, setLikesCount] = useState(initialLikesCount);
-    const [isLiked, setIsLiked] = useState(initialLiked);
-    const [likeLoading, setLikeLoading] = useState(false);
+    const [reactions, setReactions] = useState(
+        () => deriveReactionState({
+            reactions: initialReactions,
+            myReaction: initialMyReaction,
+            likesCount: initialLikesCount,
+            isLikedByCurrentUser: initialLiked,
+        }).reactions
+    );
+    const [myReaction, setMyReaction] = useState(
+        () => deriveReactionState({
+            reactions: initialReactions,
+            myReaction: initialMyReaction,
+            likesCount: initialLikesCount,
+            isLikedByCurrentUser: initialLiked,
+        }).myReaction
+    );
+    const [reactionLoading, setReactionLoading] = useState(false);
     const [isUpdateModalVisible, setUpdateModalVisible] = useState(false); // Add state to control the visibility of the update modal
     const authorPath = getMemberProfilePath(authorId, currentUserId);
 
@@ -84,12 +108,18 @@ export const Post = ({
     };
 
     const handleAddComment = async () => {
-        if (!commentText) {
+        const trimmed = commentText.trim();
+        if (!trimmed && !commentMedia) {
             return;
         }
         try {
-            await createCommentExecute(id, commentText);
+            await createCommentExecute(id, {
+                content: trimmed,
+                mediaUrl: commentMedia?.url,
+                mediaType: commentMedia?.type,
+            });
             setCommentText("");
+            setCommentMedia(null);
             setCommentCount((prevCount) => prevCount + 1);
             await getCommentsExecute(id);
             setShowComments(true);
@@ -135,54 +165,81 @@ export const Post = ({
         setCommentCount(initialCommentCount);
     }, [initialCommentCount]);
 
-    useEffect(() => { setLikesCount(initialLikesCount); setIsLiked(initialLiked); }, [initialLikesCount, initialLiked]);
+    useEffect(() => {
+        const next = deriveReactionState({
+            reactions: initialReactions,
+            myReaction: initialMyReaction,
+            likesCount: initialLikesCount,
+            isLikedByCurrentUser: initialLiked,
+        });
 
-    const toggleLike = async () => {
-        if (likeLoading) return;
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
+    }, [initialReactions, initialMyReaction, initialLikesCount, initialLiked]);
 
-        // Optimistic update: flip the UI straight away so the button reacts
-        // immediately, then reconcile with the server response. If the request
-        // fails we roll back to the previous state.
-        const previousLiked = isLiked;
-        const previousCount = likesCount;
-        const nextLiked = !isLiked;
+    const applyReactionResult = (result) => {
+        const next = deriveReactionState({
+            reactions: result?.reactions,
+            myReaction: result?.myReaction,
+            likesCount: result?.likesCount,
+            isLikedByCurrentUser: result?.isLikedByCurrentUser,
+        });
 
-        setLikeLoading(true);
-        setIsLiked(nextLiked);
-        setLikesCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
 
-        try {
-            const result = await setPostLike(id, nextLiked);
-            const serverCount = result?.likesCount;
-            const serverLiked = result?.isLikedByCurrentUser;
-
-            // The API is the source of truth for the counter.
-            if (typeof serverCount === "number") setLikesCount(serverCount);
-            if (typeof serverLiked === "boolean") setIsLiked(serverLiked);
-
-            // Keep the list in sync so the state survives a re-render or a
-            // re-fetch of the feed.
-            if (typeof setData === "function") {
-                setData((prev) =>
-                    (prev || []).map((post) =>
+        // Keep the list in sync so the state survives a re-render or a
+        // re-fetch of the feed.
+        if (typeof setData === "function") {
+            Promise.resolve(setData((prev) =>
+                Array.isArray(prev)
+                    ? prev.map((post) =>
                         post.id === id
                             ? {
                                 ...post,
-                                likesCount: typeof serverCount === "number" ? serverCount : post.likesCount,
+                                reactions: next.reactions,
+                                myReaction: next.myReaction,
+                                likesCount:
+                                    typeof result?.likesCount === "number"
+                                        ? result.likesCount
+                                        : post.likesCount,
                                 isLikedByCurrentUser:
-                                    typeof serverLiked === "boolean" ? serverLiked : post.isLikedByCurrentUser,
+                                    typeof result?.isLikedByCurrentUser === "boolean"
+                                        ? result.isLikedByCurrentUser
+                                        : post.isLikedByCurrentUser,
                             }
                             : post
                     )
-                );
-            }
+                    : prev
+            )).catch(() => undefined);
+        }
+    };
+
+    const handleReact = async (reaction) => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            // The API returns the complete post snapshot, so the counter and
+            // the current user's choice reconcile in one update.
+            applyReactionResult(await setPostReaction(id, reaction));
         } catch (error) {
-            // Roll back the optimistic update.
-            setIsLiked(previousLiked);
-            setLikesCount(previousCount);
-            toast.error(getApiErrorMessage(error, "Could not update your like. Please try again."));
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
         } finally {
-            setLikeLoading(false);
+            setReactionLoading(false);
+        }
+    };
+
+    const handleRemoveReaction = async () => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            applyReactionResult(await removePostReaction(id));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
+        } finally {
+            setReactionLoading(false);
         }
     };
 
@@ -348,6 +405,10 @@ export const Post = ({
                                     await getCommentsExecute(id)
                                 }
                                 photoUrl={comment.photoUrl}
+                                mediaUrl={comment.mediaUrl}
+                                mediaType={comment.mediaType}
+                                reactions={comment.reactions}
+                                myReaction={comment.myReaction}
                                 handleCommentDeletion={() =>
                                     setCommentCount(commentCount - 1)
                                 }
@@ -359,9 +420,14 @@ export const Post = ({
             )}
 
             <div className="mt-5 border-t border-neutral-200 px-4 py-4 sm:px-5">
-                <button type="button" onClick={toggleLike} disabled={likeLoading} aria-pressed={isLiked} className="mb-3 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary-800 hover:bg-primary/10 disabled:opacity-60">
-                    {likeLoading ? <span className="loading loading-spinner loading-xs" aria-hidden="true" /> : isLiked ? "♥" : "♡"} {isLiked ? "Liked" : "Like"} <span>{likesCount}</span>
-                </button>
+                <ReactionBar
+                    reactions={reactions}
+                    myReaction={myReaction}
+                    onReact={handleReact}
+                    onRemove={handleRemoveReaction}
+                    disabled={reactionLoading}
+                    className="mb-3"
+                />
                 <div className="flex items-end gap-2">
                     <textarea
                         value={commentText}
@@ -376,13 +442,21 @@ export const Post = ({
                         type="button"
                         className="btn btn-primary h-11 min-h-11 shrink-0 rounded-xl px-3 sm:px-4"
                         onClick={handleAddComment}
-                        disabled={isCreateLoading || !commentText.trim()}
+                        disabled={isCreateLoading || (!commentText.trim() && !commentMedia)}
                         aria-label="Add comment"
                     >
                         {isCreateLoading ? <span className="loading loading-spinner loading-sm" aria-hidden="true" /> : <BiMessageAltAdd className="text-lg" aria-hidden="true" />}
                         <span className="hidden sm:inline">{isCreateLoading ? "Checking…" : "Comment"}</span>
                     </button>
                 </div>
+                <AttachmentPicker
+                    value={commentMedia}
+                    onChange={setCommentMedia}
+                    upload={uploadPostMedia}
+                    removeUpload={deletePostMedia}
+                    disabled={isCreateLoading}
+                    className="mt-2"
+                />
                 {commentStage && (
                     <p role="status" aria-live="polite" className="mt-2 text-sm text-neutral-700">
                         <span className="font-semibold">{commentStage.label}</span>

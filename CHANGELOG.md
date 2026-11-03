@@ -11,6 +11,54 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Nothing pending.
 
+## [0.1.0] - 2026-11-03 — Reactions, comment/reply attachments, voice notes
+
+Paired with the API work in `../api` (`2026-11-03` entry) and the matching portal changes.
+Verified here with `npm test` → **14 suites / 128 tests** (was 11 / 97). Real verification is
+still `npm run shared-ui:check` + `npm run build` in each portal after re-pinning.
+
+### Added
+
+- `src/utils/reactions.js` — the fixed vocabulary (`like` 👍, `love` ❤️, `haha` 😂, `wow` 😮,
+  sad 😢) mirroring `Domain/Enums/ReactionKinds.cs`, `normalizeReactionSummaries`,
+  `deriveReactionState` (falls back to a legacy `likesCount`/`isLikedByCurrentUser` payload, so
+  an old API response still renders a like), and `mergeChatReactionUpdate`, which reconciles the
+  neutral `MessageReactionsUpdated` broadcast: counts are authoritative, `myReaction` only moves
+  for the viewer whose `memberId` is the actor's.
+- `src/components/ui/ReactionBar.js` — count chips plus a click/tap picker (Escape and outside
+  click close it, `aria-pressed`, `aria-haspopup="menu"`). Re-choosing your own reaction removes
+  it, so the strip is one toggle surface instead of a separate unlike.
+- `src/components/ui/AttachmentPicker.js` — one image or video for a comment or reply: validates
+  with `getMediaKind`/`mediaFileError`, uploads with progress, previews, and deleting the
+  attachment before submit destroys the unattached asset.
+- `src/utils/reactions.test.js`, `src/components/ui/ReactionBar.test.js`,
+  `src/components/ui/AttachmentPicker.test.js` — 31 tests. These three are **not** vendored:
+  `patient-ui` lists no test files in its manifest, and the reaction surface is covered by the
+  suite here.
+
+### Changed
+
+- `src/components/ui/Post.js`, `Comment.js`, `Reply.js` — the like button is replaced by
+  `ReactionBar`; comment and reply composers gained `AttachmentPicker` and may submit media with
+  no text; all three accept the new optional `reactions`/`myReaction`/`mediaUrl`/`mediaType` props
+  and keep working without them.
+- `src/components/chat/ChatComposer.js` — records a voice note with `MediaRecorder`
+  (2-minute auto-stop, 10 MB cap, permission-denied and unsupported-browser messages, recording
+  cancelled when the composer is disabled or unmounted), uploads it through the same media
+  endpoint, and accepts `audio` files from the file picker.
+- `src/api/chat.api.js` — `setChatMessageReaction` / `removeChatMessageReaction`, a
+  `useChatMessages().applyReactionUpdate(update, myMemberId)` reconciler, and messages for the
+  new `Chat.InvalidMessageMedia` (audio included) and `Reactions.InvalidReaction` codes.
+- `src/hooks/useChatHub.js` — binds the `MessageReactionsUpdated` hub event to
+  `onMessageReactionsUpdated`.
+- `src/components/ui/community.js` — also exports `ReactionBar` and `AttachmentPicker`. They stay
+  out of `src/components/ui/index.js`, which must remain free of `react-markdown` for CRA/Jest.
+
+### To vendor
+
+Add to both portals' `.shared-ui.json` `files`, then re-pin and sync:
+`src/utils/reactions.js`, `src/components/ui/ReactionBar.js`, `src/components/ui/AttachmentPicker.js`.
+
 ## [0.1.0] - 2026-11-01
 
 Promotion of the shared chat surface at commit `f082cb5`

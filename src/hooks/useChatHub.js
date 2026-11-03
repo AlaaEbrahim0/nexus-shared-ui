@@ -26,6 +26,7 @@ export const useChatHub = (
         enabled = true,
         onMessageCreated,
         onMessageDeleted,
+        onMessageReactionsUpdated,
         onMemberUpdated,
         onMemberLeft,
         onRoomArchived,
@@ -43,6 +44,7 @@ export const useChatHub = (
     handlersRef.current = {
         onMessageCreated,
         onMessageDeleted,
+        onMessageReactionsUpdated,
         onMemberUpdated,
         onMemberLeft,
         onRoomArchived,
@@ -102,6 +104,10 @@ export const useChatHub = (
 
         connection.on("MessageDeleted", (message) => {
             handlersRef.current.onMessageDeleted?.(message);
+        });
+
+        connection.on("MessageReactionsUpdated", (update) => {
+            handlersRef.current.onMessageReactionsUpdated?.(update);
         });
 
         connection.on("MemberUpdated", (member) => {

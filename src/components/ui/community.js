@@ -13,6 +13,8 @@
 export { Post } from "./Post";
 export { Comment } from "./Comment";
 export { Reply } from "./Reply";
+export { ReactionBar } from "./ReactionBar";
+export { AttachmentPicker } from "./AttachmentPicker";
 export { UpdatePostModal } from "./UpdatePostModal";
 export { CustomDeletionModal } from "./CustomDeletionModal";
 export { CustomToast } from "./CustomToast";

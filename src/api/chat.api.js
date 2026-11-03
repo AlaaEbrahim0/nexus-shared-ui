@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import apiClient, { getApiErrorMessage } from "./client";
 import { createClientMessageId, mergeChatMessages } from "../utils/chat";
+import { mergeChatReactionUpdate } from "../utils/reactions";
 import { MODERATION_REQUEST_TIMEOUT_MS } from "../utils/moderationState";
 
 // Chat API client.
@@ -128,6 +129,12 @@ export const sendChatMessage = (roomId, payload) =>
 export const deleteChatMessage = (messageId) =>
     request(apiClient.delete(`/api/chat/messages/${messageId}`));
 
+export const setChatMessageReaction = (messageId, reaction) =>
+    request(apiClient.put(`/api/chat/messages/${messageId}/reactions`, { reaction }));
+
+export const removeChatMessageReaction = (messageId) =>
+    request(apiClient.delete(`/api/chat/messages/${messageId}/reactions`));
+
 export const reportChatMessage = (messageId, payload) =>
     request(apiClient.post(`/api/chat/messages/${messageId}/reports`, payload));
 
@@ -181,9 +188,9 @@ export const removeChatRoomCover = (roomId) =>
     request(apiClient.delete(`/api/chat/rooms/${roomId}/cover`));
 
 /**
- * Uploads one image or video for a message in this room and resolves to
- * { url, type }. The field name "file" is part of the API contract. onProgress
- * receives 0-100 so the composer can show a real upload bar.
+ * Uploads one image, video or voice clip for a message in this room and
+ * resolves to { url, type }. The field name "file" is part of the API contract.
+ * onProgress receives 0-100 so the composer can show a real upload bar.
  */
 export const uploadChatRoomMedia = (roomId, file, onProgress) => {
     const form = new FormData();
@@ -245,7 +252,9 @@ export const getChatErrorMessage = (error, fallback = "Something went wrong. Ple
         case "Chat.InvalidRoomCover":
             return "Choose an image file for the room cover.";
         case "Chat.InvalidMessageMedia":
-            return "That file could not be attached. Choose an image or video and try again.";
+            return "That file could not be attached. Choose an image, video or voice clip and try again.";
+        case "Reactions.InvalidReaction":
+            return "That reaction is not available. Please try another one.";
         case "Chat.CreateRoomForbidden":
             return "Your account cannot create rooms.";
         case "Chat.OwnerCannotLeave":
@@ -978,6 +987,25 @@ export function useChatMessages(roomId, enabled = true) {
     }, [commit]);
 
     /**
+     * Apply a neutral MessageReactionsUpdated broadcast.
+     *
+     * The counts are authoritative for every viewer. The actor's own reaction
+     * is resolved locally with the caller's member id because one payload is
+     * delivered to the whole room and cannot carry a per-viewer flag.
+     */
+    const applyReactionUpdate = useCallback((update, myMemberId) => {
+        if (!update || !enabledRef.current) return;
+
+        commit((previous) =>
+            previous.map((message) =>
+                message.id === update.messageId
+                    ? mergeChatReactionUpdate(message, update, myMemberId)
+                    : message
+            )
+        );
+    }, [commit]);
+
+    /**
      * Remove a pending optimistic message that failed to send.
      *
      * A message rejected by moderation (or lost to a network error) must not
@@ -1005,6 +1033,7 @@ export function useChatMessages(roomId, enabled = true) {
         addOptimistic,
         confirmMessage,
         upsertMessage,
+        applyReactionUpdate,
         removeMessage,
     };
 }

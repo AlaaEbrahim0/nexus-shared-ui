@@ -1,7 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Reply } from "./Reply";
 import { convertUtcToRelativeTime } from "../../utils/utcToRelativeTime";
-import { useCreateReply, useDeleteComment, useGetReplies, useUpdateComment } from "../../api/community.api";
+import {
+    deletePostMedia,
+    removeCommentReaction,
+    setCommentReaction,
+    uploadPostMedia,
+    useCreateReply,
+    useDeleteComment,
+    useGetReplies,
+    useUpdateComment,
+} from "../../api/community.api";
+import { AttachmentPicker } from "./AttachmentPicker";
+import { ReactionBar } from "./ReactionBar";
+import { MediaGallery } from "../media/MediaGallery";
+import { deriveReactionState } from "../../utils/reactions";
 import { getApiErrorMessage } from "../../api/client";
 import { useModerationStage } from "../../hooks/useModerationStage";
 import { isModerationUnavailableError, moderationUnavailableMessage } from "../../utils/moderationState";
@@ -19,6 +32,8 @@ import { getMemberProfilePath } from "../profile/profileUtils";
 
 const imagesDir = process.env.REACT_APP_IMAGE_BASE_URL;
 
+const EMPTY_REACTIONS = [];
+
 export const Comment = ({
     id,
     content,
@@ -27,18 +42,30 @@ export const Comment = ({
     authorId,
     postId,
     photoUrl,
+    mediaUrl,
+    mediaType,
+    reactions: initialReactions = EMPTY_REACTIONS,
+    myReaction: initialMyReaction = null,
     repliesCount: initialRepliesCount,
     handleDeleteComment,
     handleCommentDeletion,
     currentUserId,
 }) => {
     const [replyText, setReplyText] = useState("");
+    const [replyMedia, setReplyMedia] = useState(null);
     const [showReplyInput, setShowReplyInput] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [commentText, setCommentText] = useState(content);
-    const [tempCommentText, setTempCommentText] = useState(content);
+    const [commentText, setCommentText] = useState(content || "");
+    const [tempCommentText, setTempCommentText] = useState(content || "");
     const [repliesCount, setRepliesCount] = useState(initialRepliesCount);
+    const [reactions, setReactions] = useState(
+        () => deriveReactionState({ reactions: initialReactions, myReaction: initialMyReaction }).reactions
+    );
+    const [myReaction, setMyReaction] = useState(
+        () => deriveReactionState({ reactions: initialReactions, myReaction: initialMyReaction }).myReaction
+    );
+    const [reactionLoading, setReactionLoading] = useState(false);
     const authorPath = getMemberProfilePath(authorId, currentUserId);
 
     const addReplyRef = useRef(null);
@@ -76,14 +103,70 @@ export const Comment = ({
         }
     }, [createReplyError]);
 
+    useEffect(() => {
+        const next = deriveReactionState({
+            reactions: initialReactions,
+            myReaction: initialMyReaction,
+        });
+
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
+    }, [initialReactions, initialMyReaction]);
+
+    const applyReactionResult = (result) => {
+        const next = deriveReactionState({
+            reactions: result?.reactions,
+            myReaction: result?.myReaction,
+        });
+
+        setReactions(next.reactions);
+        setMyReaction(next.myReaction);
+    };
+
+    const handleReact = async (reaction) => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            applyReactionResult(await setCommentReaction(postId, id, reaction));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
+        } finally {
+            setReactionLoading(false);
+        }
+    };
+
+    const handleRemoveReaction = async () => {
+        if (reactionLoading) return;
+
+        setReactionLoading(true);
+        try {
+            applyReactionResult(await removeCommentReaction(postId, id));
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Could not update your reaction. Please try again."));
+        } finally {
+            setReactionLoading(false);
+        }
+    };
+
     const handleReplyChange = (e) => {
         setReplyText(e.target.value);
     };
 
     const handleAddReply = async () => {
+        const trimmed = replyText.trim();
+        if (!trimmed && !replyMedia) {
+            return;
+        }
+
         try {
-            await createReplyExecute(postId, id, replyText);
+            await createReplyExecute(postId, id, {
+                content: trimmed,
+                mediaUrl: replyMedia?.url,
+                mediaType: replyMedia?.type,
+            });
             setReplyText("");
+            setReplyMedia(null);
             setRepliesCount((prevCount) => prevCount + 1);
             await getRepliesExecute(postId, id);
             setShowReplies(true);
@@ -279,6 +362,13 @@ export const Comment = ({
                     )}
                 </div>
 
+                {mediaUrl && (
+                    <MediaGallery
+                        media={[{ url: mediaUrl, type: mediaType === "video" ? "video" : "image" }]}
+                        className="mt-3"
+                    />
+                )}
+
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-2">
                     <button
                         type="button"
@@ -298,6 +388,14 @@ export const Comment = ({
                     >
                         <BiMessageAltAdd aria-hidden="true" /> Reply
                     </button>
+                    <ReactionBar
+                        reactions={reactions}
+                        myReaction={myReaction}
+                        onReact={handleReact}
+                        onRemove={handleRemoveReaction}
+                        disabled={reactionLoading}
+                        className="ml-auto"
+                    />
                 </div>
             {showReplies && (
                 <div className="mt-4 space-y-2 border-l-2 border-neutral-200 pl-3 sm:pl-4">
@@ -319,6 +417,10 @@ export const Comment = ({
                                     );
                                 }}
                                 image={reply.photoUrl}
+                                mediaUrl={reply.mediaUrl}
+                                mediaType={reply.mediaType}
+                                reactions={reply.reactions}
+                                myReaction={reply.myReaction}
                                 currentUserId={currentUserId}
                             />
                         ))}
@@ -337,11 +439,19 @@ export const Comment = ({
                         className="textarea textarea-bordered min-h-16 w-full resize-y rounded-xl border-neutral-300 bg-base-100 text-sm leading-6 text-neutral-900 placeholder:text-neutral-500 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 sm:text-base"
                         disabled={isCreateLoading}
                     />
+                    <AttachmentPicker
+                        value={replyMedia}
+                        onChange={setReplyMedia}
+                        upload={uploadPostMedia}
+                        removeUpload={deletePostMedia}
+                        disabled={isCreateLoading}
+                        className="mt-2"
+                    />
                     <button
                         type="button"
                         className="btn btn-sm btn-primary mt-2 min-h-10 rounded-lg"
                         onClick={handleAddReply}
-                        disabled={isCreateLoading || !replyText.trim()}
+                        disabled={isCreateLoading || (!replyText.trim() && !replyMedia)}
                     >
                         {isCreateLoading ? (
                             <span className="loading loading-spinner"></span>
