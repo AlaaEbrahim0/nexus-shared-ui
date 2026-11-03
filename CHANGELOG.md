@@ -39,6 +39,7 @@ still `npm run shared-ui:check` + `npm run build` in each portal after re-pinnin
 ### Changed
 
 - `src/components/ui/Post.js`, `Comment.js`, `Reply.js` — the like button is replaced by
+
   `ReactionBar`; comment and reply composers gained `AttachmentPicker` and may submit media with
   no text; all three accept the new optional `reactions`/`myReaction`/`mediaUrl`/`mediaType` props
   and keep working without them.
@@ -53,6 +54,14 @@ still `npm run shared-ui:check` + `npm run build` in each portal after re-pinnin
   `onMessageReactionsUpdated`.
 - `src/components/ui/community.js` — also exports `ReactionBar` and `AttachmentPicker`. They stay
   out of `src/components/ui/index.js`, which must remain free of `react-markdown` for CRA/Jest.
+
+### Fixed
+
+- The reaction picker overflowed the card on comments and replies (`5446bd2`). The strip sat
+  against the right edge — `ml-auto` in `Comment.js`, `justify-end` in `Reply.js` — while the
+  five-emoji row opened rightward from the trigger, so it ran off-screen. The trigger now leads
+  the strip and the picker anchors to the bar root, opening inward via `align="end"`. Posts and
+  chat keep the default left-ward opening.
 
 ### To vendor
 
